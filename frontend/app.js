@@ -1,14 +1,24 @@
 function showNotification(message, type = 'info') {
   const notif = document.getElementById('notifications');
-  notif.innerHTML = `<div class="${type}">${message}</div>`;
-  setTimeout(() => notif.innerHTML = '', 5000);
+  if (notif) {
+    notif.innerHTML = `<div class="${type}">${message}</div>`;
+    setTimeout(() => notif.innerHTML = '', 5000);
+  }
 }
 
 function switchPage(pageId) {
-  document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-  document.getElementById(pageId).style.display = 'block';
-  document.querySelector('nav a.active')?.classList.remove('active');
-  document.querySelector(`nav a[data-page="${pageId}"]`).classList.add('active');
+  try {
+    document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+    const page = document.getElementById(pageId);
+    if (page) page.style.display = 'block';
+    const activeLink = document.querySelector('nav a.active');
+    if (activeLink) activeLink.classList.remove('active');
+    const newActiveLink = document.querySelector(`nav a[data-page="${pageId}"]`);
+    if (newActiveLink) newActiveLink.classList.add('active');
+  } catch (error) {
+    console.error('Erreur lors du changement d’onglet :', error);
+    showNotification('Erreur lors du changement d’onglet : ' + error.message, 'error');
+  }
 }
 
 let currentDate = new Date();
@@ -19,61 +29,73 @@ function saveCurrentDate() {
 
 async function loadSalles() {
   try {
-    const salles = await fetch('/api/salles').then(res => {
+    const salles = await fetch('/api/salles', { timeout: 5000 }).then(res => {
       if (!res.ok) throw new Error('Erreur lors du chargement des salles');
       return res.json();
     });
-    document.querySelector('#salles-table tbody').innerHTML = salles.length
-      ? salles.map(s => `
-        <tr data-id="${s.id}">
-          <td>${s.nom}</td>
-          <td>${s.capacite}</td>
-          <td>${s.equipements || ''}</td>
-          <td>
-            <button class="edit-salle">Modifier</button>
-            <button class="delete-salle">Supprimer</button>
-          </td>
-        </tr>
-      `).join('')
-      : '<tr><td colspan="4" class="center">Aucune salle enregistrée</td></tr>';
+    const tbody = document.querySelector('#salles-table tbody');
+    if (tbody) {
+      tbody.innerHTML = salles.length
+        ? salles.map(s => `
+          <tr data-id="${s.id}">
+            <td>${s.nom}</td>
+            <td>${s.capacite}</td>
+            <td>${s.equipements || ''}</td>
+            <td>
+              <button class="edit-salle">Modifier</button>
+              <button class="delete-salle">Supprimer</button>
+            </td>
+          </tr>
+        `).join('')
+        : '<tr><td colspan="4" class="center">Aucune salle enregistrée</td></tr>';
+    }
   } catch (error) {
     console.error('Erreur lors du chargement des salles :', error);
-    document.querySelector('#salles-table tbody').innerHTML = '<tr><td colspan="4" class="center">Erreur de chargement</td></tr>';
+    const tbody = document.querySelector('#salles-table tbody');
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="4" class="center">Erreur de chargement</td></tr>';
+    }
     showNotification('Erreur lors du chargement des salles : ' + error.message, 'error');
   }
 }
 
 async function loadFormations() {
   try {
-    const formations = await fetch('/api/formations').then(res => {
+    const formations = await fetch('/api/formations', { timeout: 5000 }).then(res => {
       if (!res.ok) throw new Error('Erreur lors du chargement des formations');
       return res.json();
     });
-    document.querySelector('#formations-table tbody').innerHTML = formations.length
-      ? formations.map(f => `
-        <tr data-id="${f.id}">
-          <td>${f.nom}</td>
-          <td>${f.apprenants}</td>
-          <td>${f.debut}</td>
-          <td>${f.fin}</td>
-          <td>${f.besoins || ''}</td>
-          <td>
-            <button class="edit-formation">Modifier</button>
-            <button class="delete-formation">Supprimer</button>
-          </td>
-        </tr>
-      `).join('')
-      : '<tr><td colspan="6" class="center">Aucune formation enregistrée</td></tr>';
+    const tbody = document.querySelector('#formations-table tbody');
+    if (tbody) {
+      tbody.innerHTML = formations.length
+        ? formations.map(f => `
+          <tr data-id="${f.id}">
+            <td>${f.nom}</td>
+            <td>${f.apprenants}</td>
+            <td>${f.debut}</td>
+            <td>${f.fin}</td>
+            <td>${f.besoins || ''}</td>
+            <td>
+              <button class="edit-formation">Modifier</button>
+              <button class="delete-formation">Supprimer</button>
+            </td>
+          </tr>
+        `).join('')
+        : '<tr><td colspan="6" class="center">Aucune formation enregistrée</td></tr>';
+    }
   } catch (error) {
     console.error('Erreur lors du chargement des formations :', error);
-    document.querySelector('#formations-table tbody').innerHTML = '<tr><td colspan="6" class="center">Erreur de chargement</td></tr>';
+    const tbody = document.querySelector('#formations-table tbody');
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="6" class="center">Erreur de chargement</td></tr>';
+    }
     showNotification('Erreur lors du chargement des formations : ' + error.message, 'error');
   }
 }
 
 async function loadAffectations() {
   try {
-    const affectations = await fetch('/api/affectations').then(res => {
+    const affectations = await fetch('/api/affectations', { timeout: 5000 }).then(res => {
       if (!res.ok) throw new Error('Erreur lors du chargement des affectations');
       return res.json();
     });
@@ -87,15 +109,15 @@ async function loadAffectations() {
 async function loadDashboard() {
   try {
     const [salles, formations, affectations] = await Promise.all([
-      fetch('/api/salles').then(res => {
+      fetch('/api/salles', { timeout: 5000 }).then(res => {
         if (!res.ok) throw new Error('Erreur lors du chargement des salles');
         return res.json();
       }),
-      fetch('/api/formations').then(res => {
+      fetch('/api/formations', { timeout: 5000 }).then(res => {
         if (!res.ok) throw new Error('Erreur lors du chargement des formations');
         return res.json();
       }),
-      fetch('/api/affectations').then(res => {
+      fetch('/api/affectations', { timeout: 5000 }).then(res => {
         if (!res.ok) throw new Error('Erreur lors du chargement des affectations');
         return res.json();
       }),
@@ -114,33 +136,42 @@ async function loadDashboard() {
       const d = new Date(a.date);
       return d >= today && d <= nextWeek;
     });
-    document.querySelector('#dashboard-prochaines-formations tbody').innerHTML = prochaines.length
-      ? prochaines.map(a => `<tr><td>${a.formation_nom}</td><td>${a.date}</td><td>${a.apprenants}</td><td>${a.salle_nom}</td></tr>`).join('')
-      : '<tr><td colspan="4" class="center">Aucune formation prévue</td></tr>';
+    const prochainesTbody = document.querySelector('#dashboard-prochaines-formations tbody');
+    if (prochainesTbody) {
+      prochainesTbody.innerHTML = prochaines.length
+        ? prochaines.map(a => `<tr><td>${a.formation_nom}</td><td>${a.date}</td><td>${a.apprenants}</td><td>${a.salle_nom}</td></tr>`).join('')
+        : '<tr><td colspan="4" class="center">Aucune formation prévue</td></tr>';
+    }
 
-    document.getElementById('optimiser-btn').addEventListener('click', async () => {
-      try {
-        const suggestions = await fetch('/api/optimisation').then(res => {
-          if (!res.ok) throw new Error('Erreur lors de l’optimisation');
-          return res.json();
-        });
-        document.querySelector('#optimisation-suggestions tbody').innerHTML = suggestions.length
-          ? suggestions.map(s => `
-            <tr data-formation="${s.formation_id}" data-salle="${s.salle_id}" data-date="${s.date}">
-              <td>${s.formation_nom}</td>
-              <td>${s.date}</td>
-              <td>${s.apprenants}</td>
-              <td>${s.salle_nom}</td>
-              <td>${s.capacite}</td>
-              <td>${s.optimisation}%</td>
-              <td><button class="valider-affectation">Valider</button></td>
-            </tr>
-          `).join('')
-          : '<tr><td colspan="7" class="center">Aucune suggestion d’optimisation</td></tr>';
-      } catch (error) {
-        showNotification('Erreur lors de l’optimisation : ' + error.message, 'error');
-      }
-    });
+    const optimiserBtn = document.getElementById('optimiser-btn');
+    if (optimiserBtn) {
+      optimiserBtn.addEventListener('click', async () => {
+        try {
+          const suggestions = await fetch('/api/optimisation', { timeout: 5000 }).then(res => {
+            if (!res.ok) throw new Error('Erreur lors de l’optimisation');
+            return res.json();
+          });
+          const suggestionsTbody = document.querySelector('#optimisation-suggestions tbody');
+          if (suggestionsTbody) {
+            suggestionsTbody.innerHTML = suggestions.length
+              ? suggestions.map(s => `
+                <tr data-formation="${s.formation_id}" data-salle="${s.salle_id}" data-date="${s.date}">
+                  <td>${s.formation_nom}</td>
+                  <td>${s.date}</td>
+                  <td>${s.apprenants}</td>
+                  <td>${s.salle_nom}</td>
+                  <td>${s.capacite}</td>
+                  <td>${s.optimisation}%</td>
+                  <td><button class="valider-affectation">Valider</button></td>
+                </tr>
+              `).join('')
+              : '<tr><td colspan="7" class="center">Aucune suggestion d’optimisation</td></tr>';
+          }
+        } catch (error) {
+          showNotification('Erreur lors de l’optimisation : ' + error.message, 'error');
+        }
+      });
+    }
   } catch (error) {
     console.error('Erreur lors du chargement du tableau de bord :', error);
     showNotification('Erreur lors du chargement du tableau de bord : ' + error.message, 'error');
@@ -148,14 +179,20 @@ async function loadDashboard() {
     document.getElementById('stats-formations').textContent = '0';
     document.getElementById('stats-affectations').textContent = '0';
     document.getElementById('stats-remplissage').textContent = '0%';
-    document.querySelector('#dashboard-prochaines-formations tbody').innerHTML = '<tr><td colspan="4" class="center">Erreur de chargement</td></tr>';
-    document.querySelector('#optimisation-suggestions tbody').innerHTML = '<tr><td colspan="7" class="center">Erreur de chargement</td></tr>';
+    const prochainesTbody = document.querySelector('#dashboard-prochaines-formations tbody');
+    if (prochainesTbody) {
+      prochainesTbody.innerHTML = '<tr><td colspan="4" class="center">Erreur de chargement</td></tr>';
+    }
+    const suggestionsTbody = document.querySelector('#optimisation-suggestions tbody');
+    if (suggestionsTbody) {
+      suggestionsTbody.innerHTML = '<tr><td colspan="7" class="center">Erreur de chargement</td></tr>';
+    }
   }
 }
 
 async function loadPlanning() {
   try {
-    const affectations = await fetch('/api/affectations').then(res => {
+    const affectations = await fetch('/api/affectations', { timeout: 5000 }).then(res => {
       if (!res.ok) throw new Error('Erreur lors du chargement du planning');
       return res.json();
     });
@@ -199,191 +236,276 @@ async function loadPlanning() {
       html += '</div>';
     }
 
-    document.getElementById('calendar-body').innerHTML = html;
+    const calendarBody = document.getElementById('calendar-body');
+    if (calendarBody) {
+      calendarBody.innerHTML = html;
+    }
 
-    document.getElementById('prev-month').addEventListener('click', () => {
-      currentDate.setMonth(currentDate.getMonth() - 1);
-      loadPlanning();
-      saveCurrentDate();
-    });
-    document.getElementById('next-month').addEventListener('click', () => {
-      currentDate.setMonth(currentDate.getMonth() + 1);
-      loadPlanning();
-      saveCurrentDate();
-    });
+    const prevMonth = document.getElementById('prev-month');
+    const nextMonth = document.getElementById('next-month');
+    if (prevMonth && nextMonth) {
+      prevMonth.addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        loadPlanning();
+        saveCurrentDate();
+      });
+      nextMonth.addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        loadPlanning();
+        saveCurrentDate();
+      });
+    }
   } catch (error) {
     console.error('Erreur lors du chargement du planning :', error);
-    document.getElementById('calendar-body').innerHTML = '<div class="center">Erreur de chargement</div>';
+    const calendarBody = document.getElementById('calendar-body');
+    if (calendarBody) {
+      calendarBody.innerHTML = '<div class="center">Erreur de chargement</div>';
+    }
     showNotification('Erreur lors du chargement du planning : ' + error.message, 'error');
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('nav a').forEach(link => {
-    link.addEventListener('click', (e) => {
-      e.preventDefault();
-      const pageId = link.getAttribute('data-page');
-      switchPage(pageId);
-      
-      if (pageId === 'dashboard') loadDashboard();
-      else if (pageId === 'salles') loadSalles();
-      else if (pageId === 'formations') loadFormations();
-      else if (pageId === 'planning') loadPlanning();
+  try {
+    document.querySelectorAll('nav a').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const pageId = link.getAttribute('data-page');
+        if (pageId) {
+          switchPage(pageId);
+          if (pageId === 'dashboard') loadDashboard();
+          else if (pageId === 'salles') loadSalles();
+          else if (pageId === 'formations') loadFormations();
+          else if (pageId === 'planning') loadPlanning();
+        }
+      });
     });
-  });
 
-  const savedDate = localStorage.getItem('currentPlanningDate');
-  if (savedDate) {
-    currentDate = new Date(savedDate);
-  }
-
-  loadDashboard();
-
-  const salleModal = document.getElementById('salle-modal');
-  document.getElementById('add-salle-btn').addEventListener('click', () => {
-    document.getElementById('salle-modal-title').textContent = 'Ajouter une salle';
-    document.getElementById('salle-form').reset();
-    document.getElementById('salle-id').value = '';
-    salleModal.style.display = 'block';
-  });
-
-  document.querySelector('#salle-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const salle = {
-      id: document.getElementById('salle-id').value,
-      nom: document.getElementById('salle-nom').value,
-      capacite: parseInt(document.getElementById('salle-capacite').value),
-      equipements: document.getElementById('salle-equipements').value,
-    };
-    try {
-      const method = salle.id ? 'PUT' : 'POST';
-      const url = salle.id ? `/api/salles/${salle.id}` : '/api/salles';
-      await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(salle) });
-      showNotification('Salle enregistrée avec succès', 'success');
-      salleModal.style.display = 'none';
-      loadSalles();
-      loadDashboard();
-    } catch (error) {
-      showNotification('Erreur lors de l’enregistrement de la salle : ' + error.message, 'error');
+    const savedDate = localStorage.getItem('currentPlanningDate');
+    if (savedDate) {
+      currentDate = new Date(savedDate);
+    } else {
+      currentDate = new Date();
     }
-  });
 
-  document.querySelector('#salles-table').addEventListener('click', async (e) => {
-    const id = e.target.closest('tr')?.dataset.id;
-    if (!id) return;
-    if (e.target.classList.contains('edit-salle')) {
-      try {
-        const salle = (await fetch('/api/salles').then(res => res.json())).find(s => s.id == id);
-        document.getElementById('salle-modal-title').textContent = 'Modifier la salle';
-        document.getElementById('salle-id').value = salle.id;
-        document.getElementById('salle-nom').value = salle.nom;
-        document.getElementById('salle-capacite').value = salle.capacite;
-        document.getElementById('salle-equipements').value = salle.equipements || '';
+    loadDashboard();
+
+    const salleModal = document.getElementById('salle-modal');
+    if (salleModal) {
+      document.getElementById('add-salle-btn').addEventListener('click', () => {
+        document.getElementById('salle-modal-title').textContent = 'Ajouter une salle';
+        const form = document.getElementById('salle-form');
+        if (form) form.reset();
+        document.getElementById('salle-id').value = '';
         salleModal.style.display = 'block';
-      } catch (error) {
-        showNotification('Erreur lors du chargement de la salle : ' + error.message, 'error');
-      }
-    } else if (e.target.classList.contains('delete-salle')) {
-      if (confirm('Confirmer la suppression ?')) {
-        try {
-          await fetch(`/api/salles/${id}`, { method: 'DELETE' });
-          showNotification('Salle supprimée', 'success');
-          loadSalles();
-          loadDashboard();
-        } catch (error) {
-          showNotification('Erreur lors de la suppression : ' + error.message, 'error');
-        }
-      }
-    }
-  });
+      });
 
-  const formationModal = document.getElementById('formation-modal');
-  document.getElementById('add-formation-btn').addEventListener('click', () => {
-    document.getElementById('formation-modal-title').textContent = 'Ajouter une formation';
-    document.getElementById('formation-form').reset();
-    document.getElementById('formation-id').value = '';
-    formationModal.style.display = 'block';
-  });
-
-  document.querySelector('#formation-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const formation = {
-      id: document.getElementById('formation-id').value,
-      nom: document.getElementById('formation-nom').value,
-      apprenants: parseInt(document.getElementById('formation-apprenants').value),
-      debut: document.getElementById('formation-debut').value,
-      fin: document.getElementById('formation-fin').value,
-      besoins: document.getElementById('formation-besoins').value,
-    };
-    try {
-      const method = formation.id ? 'PUT' : 'POST';
-      const url = formation.id ? `/api/formations/${formation.id}` : '/api/formations';
-      await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formation) });
-      showNotification('Formation enregistrée avec succès', 'success');
-      formationModal.style.display = 'none';
-      loadFormations();
-      loadDashboard();
-    } catch (error) {
-      showNotification('Erreur lors de l’enregistrement de la formation : ' + error.message, 'error');
-    }
-  });
-
-  document.querySelector('#formations-table').addEventListener('click', async (e) => {
-    const id = e.target.closest('tr')?.dataset.id;
-    if (!id) return;
-    if (e.target.classList.contains('edit-formation')) {
-      try {
-        const formation = (await fetch('/api/formations').then(res => res.json())).find(f => f.id == id);
-        document.getElementById('formation-modal-title').textContent = 'Modifier la formation';
-        document.getElementById('formation-id').value = formation.id;
-        document.getElementById('formation-nom').value = formation.nom;
-        document.getElementById('formation-apprenants').value = formation.apprenants;
-        document.getElementById('formation-debut').value = formation.debut;
-        document.getElementById('formation-fin').value = formation.fin;
-        document.getElementById('formation-besoins').value = formation.besoins || '';
-        formationModal.style.display = 'block';
-      } catch (error) {
-        showNotification('Erreur lors du chargement de la formation : ' + error.message, 'error');
-      }
-    } else if (e.target.classList.contains('delete-formation')) {
-      if (confirm('Confirmer la suppression ?')) {
-        try {
-          await fetch(`/api/formations/${id}`, { method: 'DELETE' });
-          showNotification('Formation supprimée', 'success');
-          loadFormations();
-          loadDashboard();
-        } catch (error) {
-          showNotification('Erreur lors de la suppression : ' + error.message, 'error');
-        }
-      }
-    }
-  });
-
-  document.querySelector('#optimisation-suggestions').addEventListener('click', async (e) => {
-    if (e.target.classList.contains('valider-affectation')) {
-      const tr = e.target.closest('tr');
-      const affectation = {
-        formation_id: tr.dataset.formation,
-        salle_id: tr.dataset.salle,
-        date: tr.dataset.date,
-      };
-      try {
-        await fetch('/api/affectations', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(affectation),
+      const form = document.querySelector('#salle-form');
+      if (form) {
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const salle = {
+            id: document.getElementById('salle-id').value,
+            nom: document.getElementById('salle-nom').value,
+            capacite: parseInt(document.getElementById('salle-capacite').value) || 0,
+            equipements: document.getElementById('salle-equipements').value || '',
+          };
+          try {
+            const method = salle.id ? 'PUT' : 'POST';
+            const url = salle.id ? `/api/salles/${salle.id}` : '/api/salles';
+            const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(salle) });
+            if (!response.ok) throw new Error('Erreur serveur');
+            showNotification('Salle enregistrée avec succès', 'success');
+            salleModal.style.display = 'none';
+            loadSalles();
+            loadDashboard();
+          } catch (error) {
+            showNotification('Erreur lors de l’enregistrement de la salle : ' + error.message, 'error');
+          }
         });
-        showNotification('Affectation validée', 'success');
-        loadDashboard();
-        loadPlanning();
-        tr.remove();
-      } catch (error) {
-        showNotification('Erreur lors de la validation : ' + error.message, 'error');
+      }
+
+      const sallesTable = document.querySelector('#salles-table');
+      if (sallesTable) {
+        sallesTable.addEventListener('click', async (e) => {
+          const id = e.target.closest('tr')?.dataset.id;
+          if (!id) return;
+          if (e.target.classList.contains('edit-salle')) {
+            try {
+              const salles = await fetch('/api/salles', { timeout: 5000 }).then(res => res.json());
+              const salle = salles.find(s => s.id == id);
+              if (salle) {
+                document.getElementById('salle-modal-title').textContent = 'Modifier la salle';
+                document.getElementById('salle-id').value = salle.id;
+                document.getElementById('salle-nom').value = salle.nom;
+                document.getElementById('salle-capacite').value = salle.capacite;
+                document.getElementById('salle-equipements').value = salle.equipements || '';
+                salleModal.style.display = 'block';
+              }
+            } catch (error) {
+              showNotification('Erreur lors du chargement de la salle : ' + error.message, 'error');
+            }
+          } else if (e.target.classList.contains('delete-salle')) {
+            if (confirm('Confirmer la suppression ?')) {
+              try {
+                const response = await fetch(`/api/salles/${id}`, { method: 'DELETE', timeout: 5000 });
+                if (!response.ok) throw new Error('Erreur serveur');
+                showNotification('Salle supprimée', 'success');
+                loadSalles();
+                loadDashboard();
+              } catch (error) {
+                showNotification('Erreur lors de la suppression : ' + error.message, 'error');
+              }
+            }
+          }
+        });
       }
     }
-  });
 
-  document.querySelectorAll('.modal .close, .modal .close-modal').forEach(btn => {
-    btn.addEventListener('click', () => btn.closest('.modal').style.display = 'none');
-  });
+    const formationModal = document.getElementById('formation-modal');
+    if (formationModal) {
+      document.getElementById('add-formation-btn').addEventListener('click', () => {
+        document.getElementById('formation-modal-title').textContent = 'Ajouter une formation';
+        const form = document.getElementById('formation-form');
+        if (form) form.reset();
+        document.getElementById('formation-id').value = '';
+        formationModal.style.display = 'block';
+      });
+
+      const form = document.querySelector('#formation-form');
+      if (form) {
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const formation = {
+            id: document.getElementById('formation-id').value,
+            nom: document.getElementById('formation-nom').value,
+            apprenants: parseInt(document.getElementById('formation-apprenants').value) || 0,
+            debut: document.getElementById('formation-debut').value,
+            fin: document.getElementById('formation-fin').value,
+            besoins: document.getElementById('formation-besoins').value || '',
+          };
+          try {
+            const method = formation.id ? 'PUT' : 'POST';
+            const url = formation.id ? `/api/formations/${formation.id}` : '/api/formations';
+            const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formation) });
+            if (!response.ok) throw new Error('Erreur serveur');
+            showNotification('Formation enregistrée avec succès', 'success');
+            formationModal.style.display = 'none';
+            loadFormations();
+            loadDashboard();
+          } catch (error) {
+            showNotification('Erreur lors de l’enregistrement de la formation : ' + error.message, 'error');
+          }
+        });
+      }
+
+      const formationsTable = document.querySelector('#formations-table');
+      if (formationsTable) {
+        formationsTable.addEventListener('click', async (e) => {
+          const id = e.target.closest('tr')?.dataset.id;
+          if (!id) return;
+          if (e.target.classList.contains('edit-formation')) {
+            try {
+              const formations = await fetch('/api/formations', { timeout: 5000 }).then(res => res.json());
+              const formation = formations.find(f => f.id == id);
+              if (formation) {
+                document.getElementById('formation-modal-title').textContent = 'Modifier la formation';
+                document.getElementById('formation-id').value = formation.id;
+                document.getElementById('formation-nom').value = formation.nom;
+                document.getElementById('formation-apprenants').value = formation.apprenants;
+                document.getElementById('formation-debut').value = formation.debut;
+                document.getElementById('formation-fin').value = formation.fin;
+                document.getElementById('formation-besoins').value = formation.besoins || '';
+                formationModal.style.display = 'block';
+              }
+            } catch (error) {
+              showNotification('Erreur lors du chargement de la formation : ' + error.message, 'error');
+            }
+          } else if (e.target.classList.contains('delete-formation')) {
+            if (confirm('Confirmer la suppression ?')) {
+              try {
+                const response = await fetch(`/api/formations/${id}`, { method: 'DELETE', timeout: 5000 });
+                if (!response.ok) throw new Error('Erreur serveur');
+                showNotification('Formation supprimée', 'success');
+                loadFormations();
+                loadDashboard();
+              } catch (error) {
+                showNotification('Erreur lors de la suppression : ' + error.message, 'error');
+              }
+            }
+          }
+        });
+      }
+    }
+
+    const optimiserBtn = document.getElementById('optimiser-btn');
+    if (optimiserBtn) {
+      optimiserBtn.addEventListener('click', async () => {
+        try {
+          const suggestions = await fetch('/api/optimisation', { timeout: 5000 }).then(res => {
+            if (!res.ok) throw new Error('Erreur lors de l’optimisation');
+            return res.json();
+          });
+          const suggestionsTbody = document.querySelector('#optimisation-suggestions tbody');
+          if (suggestionsTbody) {
+            suggestionsTbody.innerHTML = suggestions.length
+              ? suggestions.map(s => `
+                <tr data-formation="${s.formation_id}" data-salle="${s.salle_id}" data-date="${s.date}">
+                  <td>${s.formation_nom}</td>
+                  <td>${s.date}</td>
+                  <td>${s.apprenants}</td>
+                  <td>${s.salle_nom}</td>
+                  <td>${s.capacite}</td>
+                  <td>${s.optimisation}%</td>
+                  <td><button class="valider-affectation">Valider</button></td>
+                </tr>
+              `).join('')
+              : '<tr><td colspan="7" class="center">Aucune suggestion d’optimisation</td></tr>';
+          }
+        } catch (error) {
+          showNotification('Erreur lors de l’optimisation : ' + error.message, 'error');
+        }
+      });
+    }
+
+    const optimisationSuggestions = document.querySelector('#optimisation-suggestions');
+    if (optimisationSuggestions) {
+      optimisationSuggestions.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('valider-affectation')) {
+          const tr = e.target.closest('tr');
+          const affectation = {
+            formation_id: tr.dataset.formation,
+            salle_id: tr.dataset.salle,
+            date: tr.dataset.date,
+          };
+          try {
+            const response = await fetch('/api/affectations', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(affectation),
+              timeout: 5000
+            });
+            if (!response.ok) throw new Error('Erreur serveur');
+            showNotification('Affectation validée', 'success');
+            loadDashboard();
+            loadPlanning();
+            if (tr) tr.remove();
+          } catch (error) {
+            showNotification('Erreur lors de la validation : ' + error.message, 'error');
+          }
+        }
+      });
+    }
+
+    const modals = document.querySelectorAll('.modal .close, .modal .close-modal');
+    modals.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const modal = btn.closest('.modal');
+        if (modal) modal.style.display = 'none';
+      });
+    });
+  } catch (error) {
+    console.error('Erreur lors de l’initialisation :', error);
+    showNotification('Erreur lors de l’initialisation de l’application : ' + error.message, 'error');
+  }
 }
