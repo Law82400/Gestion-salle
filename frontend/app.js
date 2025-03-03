@@ -83,3 +83,15 @@ document.addEventListener('DOMContentLoaded', () => {
     saveCurrentDate(); // Sauvegarder après chaque changement
   });
 });
+async function loadAffectations() {
+  const affectations = await fetch('/api/affectations').then(res => res.json());
+  // Vous pouvez trier ou filtrer les affectations par date_creation pour l’historique
+  console.log('Affectations avec historique :', affectations);
+  // Mettez à jour l’affichage dans le planning ou ailleurs si nécessaire
+}
+
+// Appelez loadAffectations dans DOMContentLoaded ou ailleurs selon vos besoins
+document.addEventListener('DOMContentLoaded', () => {
+  // ... (autres événements existants)
+  loadAffectations();
+});
