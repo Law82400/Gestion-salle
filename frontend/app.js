@@ -104,7 +104,7 @@ async function loadDashboard() {
     document.getElementById('stats-salles').textContent = salles.length || '0';
     document.getElementById('stats-formations').textContent = formations.length || '0';
     document.getElementById('stats-affectations').textContent = affectations.length || '0';
-    const taux = affectations.length ? Math.round(affectations.reduce((acc, a) => acc + (a.apprenants / a.capacite), 0) / affectations.length * 100) : 0;
+    const taux = affectations.length ? Math.round(affectations.reduce((acc, a) => acc + (a.apprenants / a.capacite || 0), 0) / affectations.length * 100) : 0;
     document.getElementById('stats-remplissage').textContent = `${taux}%`;
 
     const today = new Date();
