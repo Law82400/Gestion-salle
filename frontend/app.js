@@ -29,7 +29,7 @@ function saveCurrentDate() {
 
 async function loadSalles() {
   try {
-    const salles = await fetch('/api/salles', { timeout: 5000 }).then(res => {
+    const salles = await fetch('https://gestion-salle.onrender.com/api/salles', { timeout: 5000 }).then(res => {
       if (!res.ok) throw new Error('Erreur lors du chargement des salles');
       return res.json();
     });
@@ -61,7 +61,7 @@ async function loadSalles() {
 
 async function loadFormations() {
   try {
-    const formations = await fetch('/api/formations', { timeout: 5000 }).then(res => {
+    const formations = await fetch('https://gestion-salle.onrender.com/api/formations', { timeout: 5000 }).then(res => {
       if (!res.ok) throw new Error('Erreur lors du chargement des formations');
       return res.json();
     });
@@ -95,7 +95,7 @@ async function loadFormations() {
 
 async function loadAffectations() {
   try {
-    const affectations = await fetch('/api/affectations', { timeout: 5000 }).then(res => {
+    const affectations = await fetch('https://gestion-salle.onrender.com/api/affectations', { timeout: 5000 }).then(res => {
       if (!res.ok) throw new Error('Erreur lors du chargement des affectations');
       return res.json();
     });
@@ -109,15 +109,15 @@ async function loadAffectations() {
 async function loadDashboard() {
   try {
     const [salles, formations, affectations] = await Promise.all([
-      fetch('/api/salles', { timeout: 5000 }).then(res => {
+      fetch('https://gestion-salle.onrender.com/api/salles', { timeout: 5000 }).then(res => {
         if (!res.ok) throw new Error('Erreur lors du chargement des salles');
         return res.json();
       }),
-      fetch('/api/formations', { timeout: 5000 }).then(res => {
+      fetch('https://gestion-salle.onrender.com/api/formations', { timeout: 5000 }).then(res => {
         if (!res.ok) throw new Error('Erreur lors du chargement des formations');
         return res.json();
       }),
-      fetch('/api/affectations', { timeout: 5000 }).then(res => {
+      fetch('https://gestion-salle.onrender.com/api/affectations', { timeout: 5000 }).then(res => {
         if (!res.ok) throw new Error('Erreur lors du chargement des affectations');
         return res.json();
       }),
@@ -147,7 +147,7 @@ async function loadDashboard() {
     if (optimiserBtn) {
       optimiserBtn.addEventListener('click', async () => {
         try {
-          const suggestions = await fetch('/api/optimisation', { timeout: 5000 }).then(res => {
+          const suggestions = await fetch('https://gestion-salle.onrender.com/api/optimisation', { timeout: 5000 }).then(res => {
             if (!res.ok) throw new Error('Erreur lors de l’optimisation');
             return res.json();
           });
@@ -192,7 +192,7 @@ async function loadDashboard() {
 
 async function loadPlanning() {
   try {
-    const affectations = await fetch('/api/affectations', { timeout: 5000 }).then(res => {
+    const affectations = await fetch('https://gestion-salle.onrender.com/api/affectations', { timeout: 5000 }).then(res => {
       if (!res.ok) throw new Error('Erreur lors du chargement du planning');
       return res.json();
     });
@@ -276,7 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const pageId = link.getAttribute('data-page');
         if (pageId) {
           switchPage(pageId);
-          setTimeout(() => { // Ajout d'un délai pour s'assurer que le DOM est prêt
+          setTimeout(() => {
             if (pageId === 'dashboard') loadDashboard();
             else if (pageId === 'salles') loadSalles();
             else if (pageId === 'formations') loadFormations();
@@ -311,13 +311,13 @@ document.addEventListener('DOMContentLoaded', () => {
           e.preventDefault();
           const salle = {
             id: document.getElementById('salle-id').value,
-            nom: document.getElementById('salle-nom').value,
+            nom: document.getElementById('salle-nom').value || '',
             capacite: parseInt(document.getElementById('salle-capacite').value) || 0,
             equipements: document.getElementById('salle-equipements').value || '',
           };
           try {
             const method = salle.id ? 'PUT' : 'POST';
-            const url = salle.id ? `/api/salles/${salle.id}` : '/api/salles';
+            const url = salle.id ? `https://gestion-salle.onrender.com/api/salles/${salle.id}` : 'https://gestion-salle.onrender.com/api/salles';
             const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(salle), timeout: 5000 });
             if (!response.ok) throw new Error('Erreur serveur');
             showNotification('Salle enregistrée avec succès', 'success');
@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!id) return;
           if (e.target.classList.contains('edit-salle')) {
             try {
-              const salles = await fetch('/api/salles', { timeout: 5000 }).then(res => res.json());
+              const salles = await fetch('https://gestion-salle.onrender.com/api/salles', { timeout: 5000 }).then(res => res.json());
               const salle = salles.find(s => s.id == id);
               if (salle) {
                 document.getElementById('salle-modal-title').textContent = 'Modifier la salle';
@@ -353,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
           } else if (e.target.classList.contains('delete-salle')) {
             if (confirm('Confirmer la suppression ?')) {
               try {
-                const response = await fetch(`/api/salles/${id}`, { method: 'DELETE', timeout: 5000 });
+                const response = await fetch(`https://gestion-salle.onrender.com/api/salles/${id}`, { method: 'DELETE', timeout: 5000 });
                 if (!response.ok) throw new Error('Erreur serveur');
                 showNotification('Salle supprimée', 'success');
                 loadSalles();
@@ -383,15 +383,15 @@ document.addEventListener('DOMContentLoaded', () => {
           e.preventDefault();
           const formation = {
             id: document.getElementById('formation-id').value,
-            nom: document.getElementById('formation-nom').value,
+            nom: document.getElementById('formation-nom').value || '',
             apprenants: parseInt(document.getElementById('formation-apprenants').value) || 0,
-            debut: document.getElementById('formation-debut').value,
-            fin: document.getElementById('formation-fin').value,
+            debut: document.getElementById('formation-debut').value || '',
+            fin: document.getElementById('formation-fin').value || '',
             besoins: document.getElementById('formation-besoins').value || '',
           };
           try {
             const method = formation.id ? 'PUT' : 'POST';
-            const url = formation.id ? `/api/formations/${formation.id}` : '/api/formations';
+            const url = formation.id ? `https://gestion-salle.onrender.com/api/formations/${formation.id}` : 'https://gestion-salle.onrender.com/api/formations';
             const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formation), timeout: 5000 });
             if (!response.ok) throw new Error('Erreur serveur');
             showNotification('Formation enregistrée avec succès', 'success');
@@ -411,7 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!id) return;
           if (e.target.classList.contains('edit-formation')) {
             try {
-              const formations = await fetch('/api/formations', { timeout: 5000 }).then(res => res.json());
+              const formations = await fetch('https://gestion-salle.onrender.com/api/formations', { timeout: 5000 }).then(res => res.json());
               const formation = formations.find(f => f.id == id);
               if (formation) {
                 document.getElementById('formation-modal-title').textContent = 'Modifier la formation';
@@ -429,7 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
           } else if (e.target.classList.contains('delete-formation')) {
             if (confirm('Confirmer la suppression ?')) {
               try {
-                const response = await fetch(`/api/formations/${id}`, { method: 'DELETE', timeout: 5000 });
+                const response = await fetch(`https://gestion-salle.onrender.com/api/formations/${id}`, { method: 'DELETE', timeout: 5000 });
                 if (!response.ok) throw new Error('Erreur serveur');
                 showNotification('Formation supprimée', 'success');
                 loadFormations();
@@ -447,7 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (optimiserBtn) {
       optimiserBtn.addEventListener('click', async () => {
         try {
-          const suggestions = await fetch('/api/optimisation', { timeout: 5000 }).then(res => {
+          const suggestions = await fetch('https://gestion-salle.onrender.com/api/optimisation', { timeout: 5000 }).then(res => {
             if (!res.ok) throw new Error('Erreur lors de l’optimisation');
             return res.json();
           });
@@ -484,7 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
             date: tr.dataset.date,
           };
           try {
-            const response = await fetch('/api/affectations', {
+            const response = await fetch('https://gestion-salle.onrender.com/api/affectations', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(affectation),
