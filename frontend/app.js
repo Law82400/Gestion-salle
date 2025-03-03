@@ -23,17 +23,19 @@ async function loadSalles() {
       if (!res.ok) throw new Error('Erreur lors du chargement des salles');
       return res.json();
     });
-    document.querySelector('#salles-table tbody').innerHTML = salles.map(s => `
-      <tr data-id="${s.id}">
-        <td>${s.nom}</td>
-        <td>${s.capacite}</td>
-        <td>${s.equipements || ''}</td>
-        <td>
-          <button class="edit-salle">Modifier</button>
-          <button class="delete-salle">Supprimer</button>
-        </td>
-      </tr>
-    `).join('');
+    document.querySelector('#salles-table tbody').innerHTML = salles.length
+      ? salles.map(s => `
+        <tr data-id="${s.id}">
+          <td>${s.nom}</td>
+          <td>${s.capacite}</td>
+          <td>${s.equipements || ''}</td>
+          <td>
+            <button class="edit-salle">Modifier</button>
+            <button class="delete-salle">Supprimer</button>
+          </td>
+        </tr>
+      `).join('')
+      : '<tr><td colspan="4" class="center">Aucune salle enregistrée</td></tr>';
   } catch (error) {
     console.error('Erreur lors du chargement des salles :', error);
     document.querySelector('#salles-table tbody').innerHTML = '<tr><td colspan="4" class="center">Erreur de chargement</td></tr>';
@@ -47,19 +49,21 @@ async function loadFormations() {
       if (!res.ok) throw new Error('Erreur lors du chargement des formations');
       return res.json();
     });
-    document.querySelector('#formations-table tbody').innerHTML = formations.map(f => `
-      <tr data-id="${f.id}">
-        <td>${f.nom}</td>
-        <td>${f.apprenants}</td>
-        <td>${f.debut}</td>
-        <td>${f.fin}</td>
-        <td>${f.besoins || ''}</td>
-        <td>
-          <button class="edit-formation">Modifier</button>
-          <button class="delete-formation">Supprimer</button>
-        </td>
-      </tr>
-    `).join('');
+    document.querySelector('#formations-table tbody').innerHTML = formations.length
+      ? formations.map(f => `
+        <tr data-id="${f.id}">
+          <td>${f.nom}</td>
+          <td>${f.apprenants}</td>
+          <td>${f.debut}</td>
+          <td>${f.fin}</td>
+          <td>${f.besoins || ''}</td>
+          <td>
+            <button class="edit-formation">Modifier</button>
+            <button class="delete-formation">Supprimer</button>
+          </td>
+        </tr>
+      `).join('')
+      : '<tr><td colspan="6" class="center">Aucune formation enregistrée</td></tr>';
   } catch (error) {
     console.error('Erreur lors du chargement des formations :', error);
     document.querySelector('#formations-table tbody').innerHTML = '<tr><td colspan="6" class="center">Erreur de chargement</td></tr>';
@@ -97,9 +101,9 @@ async function loadDashboard() {
       }),
     ]);
 
-    document.getElementById('stats-salles').textContent = salles.length;
-    document.getElementById('stats-formations').textContent = formations.length;
-    document.getElementById('stats-affectations').textContent = affectations.length;
+    document.getElementById('stats-salles').textContent = salles.length || '0';
+    document.getElementById('stats-formations').textContent = formations.length || '0';
+    document.getElementById('stats-affectations').textContent = affectations.length || '0';
     const taux = affectations.length ? Math.round(affectations.reduce((acc, a) => acc + (a.apprenants / a.capacite), 0) / affectations.length * 100) : 0;
     document.getElementById('stats-remplissage').textContent = `${taux}%`;
 
@@ -140,6 +144,10 @@ async function loadDashboard() {
   } catch (error) {
     console.error('Erreur lors du chargement du tableau de bord :', error);
     showNotification('Erreur lors du chargement du tableau de bord : ' + error.message, 'error');
+    document.getElementById('stats-salles').textContent = '0';
+    document.getElementById('stats-formations').textContent = '0';
+    document.getElementById('stats-affectations').textContent = '0';
+    document.getElementById('stats-remplissage').textContent = '0%';
     document.querySelector('#dashboard-prochaines-formations tbody').innerHTML = '<tr><td colspan="4" class="center">Erreur de chargement</td></tr>';
     document.querySelector('#optimisation-suggestions tbody').innerHTML = '<tr><td colspan="7" class="center">Erreur de chargement</td></tr>';
   }
@@ -168,7 +176,12 @@ async function loadPlanning() {
           html += '<div class="calendar-week">';
           for (let j = 0; j < 5; j++) { // 5 jours (lundi à vendredi)
             const dateStr = currentDay.toISOString().split('T')[0];
-            const dayAffectations = affectations.filter(a => a.date === dateStr);
+            const dayAffectations = affectations.filter(a => {
+              const start = new Date(a.debut);
+              const end = new Date(a.fin);
+              const day = new Date(dateStr);
+              return day >= start && day <= end && a.date === dateStr;
+            });
             const isCurrentMonth = currentDay.getMonth() === month.getMonth();
             html += `
               <div class="calendar-day ${isCurrentMonth ? '' : 'inactive'}">
