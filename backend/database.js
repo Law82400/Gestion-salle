@@ -34,6 +34,7 @@ const initDatabase = () => {
           formation_id INTEGER NOT NULL,
           salle_id INTEGER NOT NULL,
           date DATE NOT NULL,
+          date_creation DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (formation_id) REFERENCES formations(id),
           FOREIGN KEY (salle_id) REFERENCES salles(id)
         )`);
@@ -41,7 +42,7 @@ const initDatabase = () => {
         db.run('CREATE INDEX IF NOT EXISTS idx_affectations_formation ON affectations(formation_id)');
         db.run('CREATE INDEX IF NOT EXISTS idx_affectations_salle ON affectations(salle_id)');
 
-        resolve(db);
+        resolve(db); // Retourner l'instance db pour qu'elle soit accessible
       });
     });
   });
@@ -63,7 +64,7 @@ const validateSalle = (salle) => {
 };
 
 module.exports = {
-  initDatabase,
+  initDatabase, // Exporter initDatabase pour initialiser db
   getSalles: (db) => new Promise((resolve, reject) => {
     db.all('SELECT * FROM salles ORDER BY nom', (err, rows) => {
       if (err) reject(err);
@@ -147,7 +148,7 @@ module.exports = {
   }),
   getAffectations: (db) => new Promise((resolve, reject) => {
     const query = `
-      SELECT a.id, a.date, 
+      SELECT a.id, a.date, a.date_creation,
              f.id as formation_id, f.nom as formation_nom, f.apprenants, f.debut, f.fin, f.besoins,
              s.id as salle_id, s.nom as salle_nom, s.capacite, s.equipements
       FROM affectations a
@@ -161,90 +162,6 @@ module.exports = {
     });
   }),
   addAffectation: (db, affectation) => new Promise((resolve, reject) => {
-    const stmt = db.prepare('INSERT INTO affectations (formation_id, salle_id, date) VALUES (?, ?, ?)');
-    stmt.run(affectation.formation_id, affectation.salle_id, affectation.date, function (err) {
-      if (err) reject(err);
-      else resolve({ id: this.lastID, ...affectation });
-      stmt.finalize();
-    });
-  }),
-  optimiserAffectations: (db) => new Promise(async (resolve, reject) => {
-    try {
-      const formations = await module.exports.getFormations(db);
-      const salles = await module.exports.getSalles(db);
-      const affectations = await module.exports.getAffectations(db);
-
-      const sallesOccupees = {};
-      affectations.forEach(a => {
-        if (!sallesOccupees[a.date]) sallesOccupees[a.date] = [];
-        sallesOccupees[a.date].push(a.salle_id);
-      });
-
-      const propositions = [];
-      for (const formation of formations) {
-        const formationAffectee = affectations.some(a => a.formation_id === formation.id);
-        if (formationAffectee) continue;
-
-        const debut = new Date(formation.debut);
-        const fin = new Date(formation.fin);
-        const dates = [];
-        for (let d = new Date(debut); d <= fin; d.setDate(d.getDate() + 1)) {
-          if (d.getDay() !== 0 && d.getDay() !== 6) {
-            dates.push(new Date(d).toISOString().split('T')[0]);
-          }
-        }
-
-        for (const date of dates) {
-          const sallesDisponibles = salles.filter(s => !sallesOccupees[date]?.includes(s.id));
-          sallesDisponibles.sort((a, b) => {
-            if (formation.besoins) {
-              const aConvient = a.equipements?.includes(formation.besoins);
-              const bConvient = b.equipements?.includes(formation.besoins);
-              if (aConvient && !bConvient) return -1;
-              if (!aConvient && bConvient) return 1;
-            }
-            if (a.capacite < formation.apprenants) return 1;
-            if (b.capacite < formation.apprenants) return -1;
-            return (a.capacite - formation.apprenants) - (b.capacite - formation.apprenants);
-          });
-
-          if (sallesDisponibles.length && sallesDisponibles[0].capacite >= formation.apprenants) {
-            const salle = sallesDisponibles[0];
-            propositions.push({
-              formation_id: formation.id,
-              formation_nom: formation.nom,
-              salle_id: salle.id,
-              salle_nom: salle.nom,
-              date,
-              apprenants: formation.apprenants,
-              capacite: salle.capacite,
-              optimisation: Math.round((formation.apprenants / salle.capacite) * 100),
-            });
-            if (!sallesOccupees[date]) sallesOccupees[date] = [];
-            sallesOccupees[date].push(salle.id);
-          }
-        }
-      }
-      resolve(propositions);
-    } catch (error) {
-      reject(error);
-    }
-  }),
-};
-// Dans initDatabase de database.js
-db.run(`CREATE TABLE IF NOT EXISTS affectations (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  formation_id INTEGER NOT NULL,
-  salle_id INTEGER NOT NULL,
-  date DATE NOT NULL,
-  date_creation DATETIME DEFAULT CURRENT_TIMESTAMP, -- Ajouter cette ligne
-  FOREIGN KEY (formation_id) REFERENCES formations(id),
-  FOREIGN KEY (salle_id) REFERENCES salles(id)
-)`);
-
-// Modifier addAffectation dans database.js
-module.exports.addAffectation = (db, affectation) => {
-  return new Promise((resolve, reject) => {
     const stmt = db.prepare(`
       INSERT INTO affectations (formation_id, salle_id, date, date_creation) 
       VALUES (?, ?, ?, ?)
@@ -253,12 +170,12 @@ module.exports.addAffectation = (db, affectation) => {
       affectation.formation_id,
       affectation.salle_id,
       affectation.date,
-      affectation.date_creation || new Date().toISOString(), // Utiliser la date fournie ou une nouvelle
+      affectation.date_creation || new Date().toISOString(),
       function(err) {
         if (err) reject(err);
         else resolve({ id: this.lastID, ...affectation });
         stmt.finalize();
       }
     );
-  });
+  }),
 };
