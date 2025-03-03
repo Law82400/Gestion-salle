@@ -231,3 +231,34 @@ module.exports = {
     }
   }),
 };
+// Dans initDatabase de database.js
+db.run(`CREATE TABLE IF NOT EXISTS affectations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  formation_id INTEGER NOT NULL,
+  salle_id INTEGER NOT NULL,
+  date DATE NOT NULL,
+  date_creation DATETIME DEFAULT CURRENT_TIMESTAMP, -- Ajouter cette ligne
+  FOREIGN KEY (formation_id) REFERENCES formations(id),
+  FOREIGN KEY (salle_id) REFERENCES salles(id)
+)`);
+
+// Modifier addAffectation dans database.js
+module.exports.addAffectation = (db, affectation) => {
+  return new Promise((resolve, reject) => {
+    const stmt = db.prepare(`
+      INSERT INTO affectations (formation_id, salle_id, date, date_creation) 
+      VALUES (?, ?, ?, ?)
+    `);
+    stmt.run(
+      affectation.formation_id,
+      affectation.salle_id,
+      affectation.date,
+      affectation.date_creation || new Date().toISOString(), // Utiliser la date fournie ou une nouvelle
+      function(err) {
+        if (err) reject(err);
+        else resolve({ id: this.lastID, ...affectation });
+        stmt.finalize();
+      }
+    );
+  });
+};

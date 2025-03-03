@@ -128,3 +128,14 @@ async function startServer() {
 }
 
 startServer();
+app.post('/api/affectations', async (req, res) => {
+  try {
+    const affectation = await addAffectation(db, {
+      ...req.body,
+      date_creation: new Date().toISOString() // Ajouter une date de création pour l’historique
+    });
+    res.json(affectation);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
