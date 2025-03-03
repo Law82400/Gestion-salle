@@ -196,7 +196,10 @@ async function loadPlanning() {
       if (!res.ok) throw new Error('Erreur lors du chargement du planning');
       return res.json();
     });
-    document.getElementById('current-month').textContent = currentDate.toLocaleString('fr', { month: 'long', year: 'numeric' });
+    const currentMonth = document.getElementById('current-month');
+    if (currentMonth) {
+      currentMonth.textContent = currentDate.toLocaleString('fr', { month: 'long', year: 'numeric' });
+    }
     
     const monthsToShow = 12;
     let html = '';
@@ -273,10 +276,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const pageId = link.getAttribute('data-page');
         if (pageId) {
           switchPage(pageId);
-          if (pageId === 'dashboard') loadDashboard();
-          else if (pageId === 'salles') loadSalles();
-          else if (pageId === 'formations') loadFormations();
-          else if (pageId === 'planning') loadPlanning();
+          setTimeout(() => { // Ajout d'un délai pour s'assurer que le DOM est prêt
+            if (pageId === 'dashboard') loadDashboard();
+            else if (pageId === 'salles') loadSalles();
+            else if (pageId === 'formations') loadFormations();
+            else if (pageId === 'planning') loadPlanning();
+          }, 100);
         }
       });
     });
@@ -313,7 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
           try {
             const method = salle.id ? 'PUT' : 'POST';
             const url = salle.id ? `/api/salles/${salle.id}` : '/api/salles';
-            const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(salle) });
+            const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(salle), timeout: 5000 });
             if (!response.ok) throw new Error('Erreur serveur');
             showNotification('Salle enregistrée avec succès', 'success');
             salleModal.style.display = 'none';
@@ -387,7 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
           try {
             const method = formation.id ? 'PUT' : 'POST';
             const url = formation.id ? `/api/formations/${formation.id}` : '/api/formations';
-            const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formation) });
+            const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formation), timeout: 5000 });
             if (!response.ok) throw new Error('Erreur serveur');
             showNotification('Formation enregistrée avec succès', 'success');
             formationModal.style.display = 'none';
