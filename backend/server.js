@@ -4,18 +4,17 @@ const cors = require('cors');
 const path = require('path');
 
 const app = express();
-app.use(cors()); // Permettre les requêtes cross-origin
+app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../frontend'))); // Servir le frontend
+app.use(express.static(path.join(__dirname, '../frontend')));
 
-let db; // Variable globale pour stocker l'instance de la base de données
+let db;
 
 async function startServer() {
   try {
-    db = await initDatabase(); // Initialiser la base de données
+    db = await initDatabase();
     console.log('Base de données initialisée avec succès');
 
-    // API Salles
     app.get('/api/salles', async (req, res) => {
       try {
         const salles = await getSalles(db);
@@ -52,7 +51,6 @@ async function startServer() {
       }
     });
 
-    // API Formations
     app.get('/api/formations', async (req, res) => {
       try {
         const formations = await getFormations(db);
@@ -89,7 +87,6 @@ async function startServer() {
       }
     });
 
-    // API Affectations
     app.get('/api/affectations', async (req, res) => {
       try {
         const affectations = await getAffectations(db);
@@ -103,7 +100,7 @@ async function startServer() {
       try {
         const affectation = await addAffectation(db, {
           ...req.body,
-          date_creation: new Date().toISOString() // Ajouter une date de création pour l’historique
+          date_creation: new Date().toISOString()
         });
         res.json(affectation);
       } catch (error) {
@@ -111,7 +108,6 @@ async function startServer() {
       }
     });
 
-    // API Optimisation
     app.get('/api/optimisation', async (req, res) => {
       try {
         const suggestions = await optimiserAffectations(db);
@@ -121,7 +117,6 @@ async function startServer() {
       }
     });
 
-    // Servir l'index.html pour toutes les autres routes
     app.get('*', (req, res) => {
       res.sendFile(path.join(__dirname, '../frontend/index.html'));
     });
@@ -132,7 +127,7 @@ async function startServer() {
     });
   } catch (error) {
     console.error('Erreur lors de l’initialisation de la base de données :', error);
-    process.exit(1); // Arrêter le serveur si la base de données échoue
+    process.exit(1);
   }
 }
 
