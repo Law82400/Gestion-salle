@@ -42,7 +42,7 @@ const initDatabase = () => {
         db.run('CREATE INDEX IF NOT EXISTS idx_affectations_formation ON affectations(formation_id)');
         db.run('CREATE INDEX IF NOT EXISTS idx_affectations_salle ON affectations(salle_id)');
 
-        resolve(db); // Retourner l'instance db pour qu'elle soit accessible
+        resolve(db);
       });
     });
   });
@@ -64,7 +64,7 @@ const validateSalle = (salle) => {
 };
 
 module.exports = {
-  initDatabase, // Exporter initDatabase pour initialiser db
+  initDatabase,
   getSalles: (db) => new Promise((resolve, reject) => {
     db.all('SELECT * FROM salles ORDER BY nom', (err, rows) => {
       if (err) reject(err);
@@ -203,11 +203,11 @@ module.exports = {
               AND id NOT IN (SELECT salle_id FROM affectations WHERE date = ?)
             `, [f.apprenants, `%${f.besoins}%`, f.debut], (err, salles) => {
               if (err) rejectSalles(err);
-              else resolveSalles(salles);
+              else resolveSalles(salles || []);
             });
           });
 
-          if (sallesDisponibles && sallesDisponibles.length > 0) {
+          if (sallesDisponibles.length > 0) {
             const salle = sallesDisponibles.reduce((best, current) => 
               current.capacite - f.apprenants < best.capacite - f.apprenants ? current : best
             );
