@@ -1,11 +1,9 @@
-// Fonction pour afficher les notifications
 function showNotification(message, type = 'info') {
   const notif = document.getElementById('notifications');
   notif.innerHTML = `<div class="${type}">${message}</div>`;
   setTimeout(() => notif.innerHTML = '', 5000);
 }
 
-// Fonction pour changer d'onglet
 function switchPage(pageId) {
   document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
   document.getElementById(pageId).style.display = 'block';
@@ -13,15 +11,12 @@ function switchPage(pageId) {
   document.querySelector(`nav a[data-page="${pageId}"]`).classList.add('active');
 }
 
-// Variable globale pour le mois affiché dans le planning
 let currentDate = new Date();
 
-// Fonction pour sauvegarder le mois actuel dans localStorage
 function saveCurrentDate() {
   localStorage.setItem('currentPlanningDate', currentDate.toISOString());
 }
 
-// Fonction pour charger les salles
 async function loadSalles() {
   try {
     const salles = await fetch('/api/salles').then(res => {
@@ -46,7 +41,6 @@ async function loadSalles() {
   }
 }
 
-// Fonction pour charger les formations
 async function loadFormations() {
   try {
     const formations = await fetch('/api/formations').then(res => {
@@ -73,14 +67,12 @@ async function loadFormations() {
   }
 }
 
-// Fonction pour charger les affectations
 async function loadAffectations() {
   try {
     const affectations = await fetch('/api/affectations').then(res => {
       if (!res.ok) throw new Error('Erreur lors du chargement des affectations');
       return res.json();
     });
-    // Utilisé dans le planning ou ailleurs, à ajuster selon vos besoins
     console.log('Affectations chargées :', affectations);
   } catch (error) {
     console.error('Erreur lors du chargement des affectations :', error);
@@ -88,7 +80,6 @@ async function loadAffectations() {
   }
 }
 
-// Fonction pour charger le tableau de bord
 async function loadDashboard() {
   try {
     const [salles, formations, affectations] = await Promise.all([
@@ -123,26 +114,27 @@ async function loadDashboard() {
       ? prochaines.map(a => `<tr><td>${a.formation_nom}</td><td>${a.date}</td><td>${a.apprenants}</td><td>${a.salle_nom}</td></tr>`).join('')
       : '<tr><td colspan="4" class="center">Aucune formation prévue</td></tr>';
 
-    // Optimisation
     document.getElementById('optimiser-btn').addEventListener('click', async () => {
       try {
         const suggestions = await fetch('/api/optimisation').then(res => {
           if (!res.ok) throw new Error('Erreur lors de l’optimisation');
           return res.json();
         });
-        document.querySelector('#optimisation-suggestions tbody').innerHTML = suggestions.map(s => `
-          <tr data-formation="${s.formation_id}" data-salle="${s.salle_id}" data-date="${s.date}">
-            <td>${s.formation_nom}</td>
-            <td>${s.date}</td>
-            <td>${s.apprenants}</td>
-            <td>${s.salle_nom}</td>
-            <td>${s.capacite}</td>
-            <td>${s.optimisation}%</td>
-            <td><button class="valider-affectation">Valider</button></td>
-          </tr>
-        `).join('');
+        document.querySelector('#optimisation-suggestions tbody').innerHTML = suggestions.length
+          ? suggestions.map(s => `
+            <tr data-formation="${s.formation_id}" data-salle="${s.salle_id}" data-date="${s.date}">
+              <td>${s.formation_nom}</td>
+              <td>${s.date}</td>
+              <td>${s.apprenants}</td>
+              <td>${s.salle_nom}</td>
+              <td>${s.capacite}</td>
+              <td>${s.optimisation}%</td>
+              <td><button class="valider-affectation">Valider</button></td>
+            </tr>
+          `).join('')
+          : '<tr><td colspan="7" class="center">Aucune suggestion d’optimisation</td></tr>';
       } catch (error) {
-        showNotification(error.message, 'error');
+        showNotification('Erreur lors de l’optimisation : ' + error.message, 'error');
       }
     });
   } catch (error) {
@@ -153,7 +145,6 @@ async function loadDashboard() {
   }
 }
 
-// Fonction pour charger le planning
 async function loadPlanning() {
   try {
     const affectations = await fetch('/api/affectations').then(res => {
@@ -162,36 +153,51 @@ async function loadPlanning() {
     });
     document.getElementById('current-month').textContent = currentDate.toLocaleString('fr', { month: 'long', year: 'numeric' });
     
-    const monthsToShow = 12; // Afficher 12 mois pour le défilement vertical
+    const monthsToShow = 12;
     let html = '';
 
     for (let i = 0; i < monthsToShow; i++) {
       const month = new Date(currentDate.getFullYear(), currentDate.getMonth() + i, 1);
-      let currentDay = new Date(month.getFullYear(), month.getMonth(), 1);
-      while (currentDay.getDay() !== 1) currentDay.setDate(currentDay.getDate() - 1);
-
       html += `<h3>${month.toLocaleString('fr', { month: 'long', year: 'numeric' })}</h3>`;
       html += '<div class="calendar-month">';
+      let currentDay = new Date(month.getFullYear(), month.getMonth(), 1);
+      while (currentDay.getDay() !== 1) currentDay.setDate(currentDay.getDate() - 1); // Aligner sur lundi
+
       do {
-        html += '<div class="calendar-week">';
-        for (let j = 0; j < 5; j++) { // 5 jours par semaine (lundi à vendredi)
-          const dateStr = currentDay.toISOString().split('T')[0];
-          const dayAffectations = affectations.filter(a => a.date === dateStr);
-          const isCurrentMonth = currentDay.getMonth() === month.getMonth();
-          html += `
-            <div class="calendar-day ${isCurrentMonth ? '' : 'inactive'}">
-              <div class="day-number">${currentDay.getDate()}</div>
-              ${dayAffectations.map(a => `<div class="event">${a.formation_nom} (${a.salle_nom})</div>`).join('')}
-            </div>
-          `;
-          currentDay.setDate(currentDay.getDate() + 1);
+        if (currentDay.getDay() >= 1 && currentDay.getDay() <= 5) { // Afficher seulement lundi à vendredi
+          html += '<div class="calendar-week">';
+          for (let j = 0; j < 5; j++) { // 5 jours (lundi à vendredi)
+            const dateStr = currentDay.toISOString().split('T')[0];
+            const dayAffectations = affectations.filter(a => a.date === dateStr);
+            const isCurrentMonth = currentDay.getMonth() === month.getMonth();
+            html += `
+              <div class="calendar-day ${isCurrentMonth ? '' : 'inactive'}">
+                <div class="day-number">${currentDay.getDate()}</div>
+                ${dayAffectations.map(a => `<div class="event">${a.formation_nom} (${a.salle_nom})</div>`).join('')}
+              </div>
+            `;
+            currentDay.setDate(currentDay.getDate() + 1);
+          }
+          html += '</div>';
+        } else {
+          currentDay.setDate(currentDay.getDate() + 1); // Passer les week-ends
         }
-        html += '</div>';
       } while (currentDay.getMonth() === month.getMonth());
       html += '</div>';
     }
 
     document.getElementById('calendar-body').innerHTML = html;
+
+    document.getElementById('prev-month').addEventListener('click', () => {
+      currentDate.setMonth(currentDate.getMonth() - 1);
+      loadPlanning();
+      saveCurrentDate();
+    });
+    document.getElementById('next-month').addEventListener('click', () => {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      loadPlanning();
+      saveCurrentDate();
+    });
   } catch (error) {
     console.error('Erreur lors du chargement du planning :', error);
     document.getElementById('calendar-body').innerHTML = '<div class="center">Erreur de chargement</div>';
@@ -199,16 +205,13 @@ async function loadPlanning() {
   }
 }
 
-// Gestion des salles
 document.addEventListener('DOMContentLoaded', () => {
-  // Navigation entre les onglets
   document.querySelectorAll('nav a').forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
       const pageId = link.getAttribute('data-page');
       switchPage(pageId);
       
-      // Charger les données appropriées pour chaque onglet
       if (pageId === 'dashboard') loadDashboard();
       else if (pageId === 'salles') loadSalles();
       else if (pageId === 'formations') loadFormations();
@@ -216,16 +219,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Restaurer la date du planning depuis localStorage
   const savedDate = localStorage.getItem('currentPlanningDate');
   if (savedDate) {
     currentDate = new Date(savedDate);
   }
 
-  // Charger initialement le tableau de bord
   loadDashboard();
 
-  // Gestion des salles
   const salleModal = document.getElementById('salle-modal');
   document.getElementById('add-salle-btn').addEventListener('click', () => {
     document.getElementById('salle-modal-title').textContent = 'Ajouter une salle';
@@ -251,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
       loadSalles();
       loadDashboard();
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification('Erreur lors de l’enregistrement de la salle : ' + error.message, 'error');
     }
   });
 
@@ -284,7 +284,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Gestion des formations
   const formationModal = document.getElementById('formation-modal');
   document.getElementById('add-formation-btn').addEventListener('click', () => {
     document.getElementById('formation-modal-title').textContent = 'Ajouter une formation';
@@ -312,7 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
       loadFormations();
       loadDashboard();
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification('Erreur lors de l’enregistrement de la formation : ' + error.message, 'error');
     }
   });
 
@@ -347,7 +346,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Optimisation
   document.querySelector('#optimisation-suggestions').addEventListener('click', async (e) => {
     if (e.target.classList.contains('valider-affectation')) {
       const tr = e.target.closest('tr');
@@ -364,15 +362,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         showNotification('Affectation validée', 'success');
         loadDashboard();
+        loadPlanning();
         tr.remove();
       } catch (error) {
-        showNotification(error.message, 'error');
+        showNotification('Erreur lors de la validation : ' + error.message, 'error');
       }
     }
   });
 
-  // Fermer les modales
   document.querySelectorAll('.modal .close, .modal .close-modal').forEach(btn => {
     btn.addEventListener('click', () => btn.closest('.modal').style.display = 'none');
   });
-});
+}
