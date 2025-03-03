@@ -18,7 +18,7 @@ async function startServer() {
     app.get('/api/salles', async (req, res) => {
       try {
         const salles = await getSalles(db);
-        res.json(salles);
+        res.json(salles || []);
       } catch (error) {
         res.status(500).json({ error: error.message });
       }
@@ -54,7 +54,7 @@ async function startServer() {
     app.get('/api/formations', async (req, res) => {
       try {
         const formations = await getFormations(db);
-        res.json(formations);
+        res.json(formations || []);
       } catch (error) {
         res.status(500).json({ error: error.message });
       }
@@ -90,7 +90,7 @@ async function startServer() {
     app.get('/api/affectations', async (req, res) => {
       try {
         const affectations = await getAffectations(db);
-        res.json(affectations);
+        res.json(affectations || []);
       } catch (error) {
         res.status(500).json({ error: error.message });
       }
@@ -111,7 +111,7 @@ async function startServer() {
     app.get('/api/optimisation', async (req, res) => {
       try {
         const suggestions = await optimiserAffectations(db);
-        res.json(suggestions);
+        res.json(suggestions || []);
       } catch (error) {
         res.status(500).json({ error: error.message });
       }
