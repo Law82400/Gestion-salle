@@ -72,27 +72,35 @@ module.exports = {
     });
   }),
   addSalle: (db, salle) => new Promise((resolve, reject) => {
-    validateSalle(salle);
-    const stmt = db.prepare('INSERT INTO salles (nom, capacite, equipements) VALUES (?, ?, ?)');
-    stmt.run(salle.nom, salle.capacite, salle.equipements, function (err) {
-      if (err) reject(err);
-      else resolve({ id: this.lastID, ...salle });
-      stmt.finalize();
-    });
+    try {
+      validateSalle(salle);
+      const stmt = db.prepare('INSERT INTO salles (nom, capacite, equipements) VALUES (?, ?, ?)');
+      stmt.run(salle.nom, salle.capacite, salle.equipements, function (err) {
+        if (err) reject(err);
+        else resolve({ id: this.lastID, ...salle });
+        stmt.finalize();
+      });
+    } catch (error) {
+      reject(error);
+    }
   }),
   updateSalle: (db, salle) => new Promise((resolve, reject) => {
-    validateSalle(salle);
-    const stmt = db.prepare('UPDATE salles SET nom = ?, capacite = ?, equipements = ?, date_modification = CURRENT_TIMESTAMP WHERE id = ?');
-    stmt.run(salle.nom, salle.capacite, salle.equipements, salle.id, function (err) {
-      if (err) reject(err);
-      else resolve({ ...salle });
-      stmt.finalize();
-    });
+    try {
+      validateSalle(salle);
+      const stmt = db.prepare('UPDATE salles SET nom = ?, capacite = ?, equipements = ?, date_modification = CURRENT_TIMESTAMP WHERE id = ?');
+      stmt.run(salle.nom, salle.capacite, salle.equipements, salle.id, function (err) {
+        if (err) reject(err);
+        else resolve({ ...salle });
+        stmt.finalize();
+      });
+    } catch (error) {
+      reject(error);
+    }
   }),
   deleteSalle: (db, id) => new Promise((resolve, reject) => {
     db.get('SELECT COUNT(*) as count FROM affectations WHERE salle_id = ?', [id], (err, row) => {
       if (err) return reject(err);
-      if (row.count > 0) return reject(new Error('Salle utilisée dans des affectations'));
+      if (row && row.count > 0) return reject(new Error('Salle utilisée dans des affectations'));
       const stmt = db.prepare('DELETE FROM salles WHERE id = ?');
       stmt.run(id, function (err) {
         if (err) reject(err);
@@ -108,22 +116,30 @@ module.exports = {
     });
   }),
   addFormation: (db, formation) => new Promise((resolve, reject) => {
-    validateFormation(formation);
-    const stmt = db.prepare('INSERT INTO formations (nom, apprenants, debut, fin, besoins) VALUES (?, ?, ?, ?, ?)');
-    stmt.run(formation.nom, formation.apprenants, formation.debut, formation.fin, formation.besoins, function (err) {
-      if (err) reject(err);
-      else resolve({ id: this.lastID, ...formation });
-      stmt.finalize();
-    });
+    try {
+      validateFormation(formation);
+      const stmt = db.prepare('INSERT INTO formations (nom, apprenants, debut, fin, besoins) VALUES (?, ?, ?, ?, ?)');
+      stmt.run(formation.nom, formation.apprenants, formation.debut, formation.fin, formation.besoins, function (err) {
+        if (err) reject(err);
+        else resolve({ id: this.lastID, ...formation });
+        stmt.finalize();
+      });
+    } catch (error) {
+      reject(error);
+    }
   }),
   updateFormation: (db, formation) => new Promise((resolve, reject) => {
-    validateFormation(formation);
-    const stmt = db.prepare('UPDATE formations SET nom = ?, apprenants = ?, debut = ?, fin = ?, besoins = ?, date_modification = CURRENT_TIMESTAMP WHERE id = ?');
-    stmt.run(formation.nom, formation.apprenants, formation.debut, formation.fin, formation.besoins, formation.id, function (err) {
-      if (err) reject(err);
-      else resolve({ ...formation });
-      stmt.finalize();
-    });
+    try {
+      validateFormation(formation);
+      const stmt = db.prepare('UPDATE formations SET nom = ?, apprenants = ?, debut = ?, fin = ?, besoins = ?, date_modification = CURRENT_TIMESTAMP WHERE id = ?');
+      stmt.run(formation.nom, formation.apprenants, formation.debut, formation.fin, formation.besoins, formation.id, function (err) {
+        if (err) reject(err);
+        else resolve({ ...formation });
+        stmt.finalize();
+      });
+    } catch (error) {
+      reject(error);
+    }
   }),
   deleteFormation: (db, id) => new Promise((resolve, reject) => {
     db.serialize(() => {
@@ -162,98 +178,119 @@ module.exports = {
     });
   }),
   addAffectation: (db, affectation) => new Promise((resolve, reject) => {
-    const stmt = db.prepare(`
-      INSERT INTO affectations (formation_id, salle_id, date, date_creation) 
-      VALUES (?, ?, ?, ?)
-    `);
-    stmt.run(
-      affectation.formation_id,
-      affectation.salle_id,
-      affectation.date,
-      affectation.date_creation || new Date().toISOString(),
-      function(err) {
-        if (err) reject(err);
-        else resolve({ id: this.lastID, ...affectation });
-        stmt.finalize();
+    try {
+      if (!affectation.formation_id || !affectation.salle_id || !affectation.date) {
+        throw new Error('Données d\'affectation invalides');
       }
-    );
+      
+      const stmt = db.prepare(`
+        INSERT INTO affectations (formation_id, salle_id, date, date_creation) 
+        VALUES (?, ?, ?, ?)
+      `);
+      stmt.run(
+        affectation.formation_id,
+        affectation.salle_id,
+        affectation.date,
+        affectation.date_creation || new Date().toISOString(),
+        function(err) {
+          if (err) reject(err);
+          else resolve({ id: this.lastID, ...affectation });
+          stmt.finalize();
+        }
+      );
+    } catch (error) {
+      reject(error);
+    }
   }),
- optimiserAffectations: (db) => new Promise((resolve, reject) => {
-  // Récupérer d'abord toutes les formations à venir
-  db.all(`
-    SELECT f.id as formation_id, f.nom as formation_nom, f.apprenants, f.debut, f.fin, f.besoins
-    FROM formations f
-    WHERE f.debut >= date('now')
-    ORDER BY f.debut
-  `, async (err, formations) => {
-    if (err) return reject(err);
-    if (!formations || formations.length === 0) {
-      return resolve([]);
-    }
-
-    const suggestions = [];
-    
-    for (const f of formations) {
-      try {
-        // Vérifier si la formation a déjà une affectation
-        const existingAffectation = await new Promise((resolveCheck, rejectCheck) => {
-          db.get('SELECT id FROM affectations WHERE formation_id = ? AND date = ?', 
-            [f.formation_id, f.debut], (err, row) => {
-              if (err) return rejectCheck(err);
-              resolveCheck(row);
-            });
-        });
-        
-        // Si la formation a déjà une affectation, passer à la suivante
-        if (existingAffectation) continue;
-        
-        // Trouver les salles disponibles pour cette formation
-        const sallesDisponibles = await new Promise((resolveSalles, rejectSalles) => {
-          db.all(`
-            SELECT * FROM salles 
-            WHERE capacite >= ? 
-            AND id NOT IN (
-              SELECT salle_id FROM affectations WHERE date = ?
-            )
-            ORDER BY capacite
-          `, [f.apprenants, f.debut], (err, salles) => {
-            if (err) rejectSalles(err);
-            else resolveSalles(salles || []);
-          });
-        });
-
-        // Filtrer les salles par besoins d'équipement si nécessaire
-        let sallesFiltrees = sallesDisponibles;
-        if (f.besoins && f.besoins.trim() !== '') {
-          sallesFiltrees = sallesDisponibles.filter(s => 
-            !s.equipements || s.equipements.includes(f.besoins)
-          );
-        }
-
-        if (sallesFiltrees.length > 0) {
-          // Trouver la salle la plus adaptée (capacité la plus proche)
-          const salle = sallesFiltrees.reduce((best, current) => 
-            (current.capacite - f.apprenants < best.capacite - f.apprenants && 
-             current.capacite >= f.apprenants) ? current : best, 
-            sallesFiltrees[0]
-          );
-          
-          suggestions.push({
-            formation_id: f.formation_id,
-            formation_nom: f.formation_nom,
-            apprenants: f.apprenants,
-            date: f.debut,
-            salle_id: salle.id,
-            salle_nom: salle.nom,
-            capacite: salle.capacite,
-            optimisation: Math.round((f.apprenants / salle.capacite) * 100)
-          });
-        }
-      } catch (error) {
-        console.error("Erreur lors de l'optimisation:", error);
-        // Continue avec les autres formations même si une erreur se produit
+  optimiserAffectations: (db) => new Promise((resolve, reject) => {
+    // Récupérer d'abord toutes les formations à venir
+    db.all(`
+      SELECT f.id as formation_id, f.nom as formation_nom, f.apprenants, f.debut, f.fin, f.besoins
+      FROM formations f
+      WHERE f.debut >= date('now')
+      ORDER BY f.debut
+    `, async (err, formations) => {
+      if (err) return reject(err);
+      if (!formations || formations.length === 0) {
+        return resolve([]);
       }
-    }
-    resolve(suggestions);
-  });
-}),
+
+      const suggestions = [];
+      
+      for (const f of formations) {
+        try {
+          // Vérifier si la formation a déjà une affectation
+          const existingAffectation = await new Promise((resolveCheck, rejectCheck) => {
+            db.get('SELECT id FROM affectations WHERE formation_id = ? AND date = ?', 
+              [f.formation_id, f.debut], (err, row) => {
+                if (err) return rejectCheck(err);
+                resolveCheck(row);
+              });
+          });
+          
+          // Si la formation a déjà une affectation, passer à la suivante
+          if (existingAffectation) continue;
+          
+          // Trouver les salles disponibles pour cette formation
+          const sallesDisponibles = await new Promise((resolveSalles, rejectSalles) => {
+            db.all(`
+              SELECT * FROM salles 
+              WHERE capacite >= ? 
+              AND id NOT IN (
+                SELECT salle_id FROM affectations WHERE date = ?
+              )
+              ORDER BY capacite
+            `, [f.apprenants, f.debut], (err, salles) => {
+              if (err) rejectSalles(err);
+              else resolveSalles(salles || []);
+            });
+          });
+
+          // Filtrer les salles par besoins d'équipement si nécessaire
+          let sallesFiltrees = sallesDisponibles;
+          if (f.besoins && f.besoins.trim() !== '') {
+            sallesFiltrees = sallesDisponibles.filter(s => 
+              !s.equipements || (s.equipements && s.equipements.includes(f.besoins))
+            );
+            // S'il n'y a aucune salle qui correspond aux besoins, utiliser toutes les salles disponibles
+            if (sallesFiltrees.length === 0) {
+              sallesFiltrees = sallesDisponibles;
+            }
+          }
+
+          if (sallesFiltrees.length > 0) {
+            // Trouver la salle la plus adaptée (capacité la plus proche)
+            const salle = sallesFiltrees.reduce((best, current) => {
+              // Préférer les salles qui peuvent accueillir le nombre d'apprenants
+              // et qui ont la capacité la plus proche (éviter le gaspillage)
+              if (current.capacite >= f.apprenants) {
+                if (best.capacite < f.apprenants || (current.capacite < best.capacite)) {
+                  return current;
+                }
+              } else if (best.capacite < f.apprenants && current.capacite > best.capacite) {
+                // Si aucune salle n'est assez grande, prendre la plus grande disponible
+                return current;
+              }
+              return best;
+            }, sallesFiltrees[0]);
+            
+            suggestions.push({
+              formation_id: f.formation_id,
+              formation_nom: f.formation_nom,
+              apprenants: f.apprenants,
+              date: f.debut,
+              salle_id: salle.id,
+              salle_nom: salle.nom,
+              capacite: salle.capacite,
+              optimisation: Math.round((f.apprenants / salle.capacite) * 100)
+            });
+          }
+        } catch (error) {
+          console.error("Erreur lors de l'optimisation pour une formation:", error);
+          // Continue avec les autres formations même si une erreur se produit
+        }
+      }
+      resolve(suggestions);
+    });
+  }),
+};
