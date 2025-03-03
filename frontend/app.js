@@ -53,3 +53,33 @@ document.addEventListener('DOMContentLoaded', () => {
   // ... (autres événements existants)
   loadPlanning(); // Assurez-vous que loadPlanning est appelé ici
 });
+// Sauvegarder le mois actuel dans localStorage à chaque changement
+function saveCurrentDate() {
+  localStorage.setItem('currentPlanningDate', currentDate.toISOString());
+}
+
+// Restaurer le mois actuel depuis localStorage au chargement
+document.addEventListener('DOMContentLoaded', () => {
+  // Restaurer la date si elle existe dans localStorage
+  const savedDate = localStorage.getItem('currentPlanningDate');
+  if (savedDate) {
+    currentDate = new Date(savedDate);
+  } else {
+    currentDate = new Date(); // Date actuelle par défaut
+  }
+
+  // ... (autres événements existants, comme loadDashboard, loadSalles, etc.)
+  loadPlanning(); // Charger le planning avec la date restaurée
+
+  // Ajouter les écouteurs pour les boutons (déjà présents dans loadPlanning, mais ici pour confirmation)
+  document.getElementById('prev-month').addEventListener('click', () => {
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    loadPlanning();
+    saveCurrentDate(); // Sauvegarder après chaque changement
+  });
+  document.getElementById('next-month').addEventListener('click', () => {
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    loadPlanning();
+    saveCurrentDate(); // Sauvegarder après chaque changement
+  });
+});
