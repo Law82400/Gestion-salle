@@ -178,55 +178,82 @@ module.exports = {
       }
     );
   }),
-  optimiserAffectations: (db) => new Promise((resolve, reject) => {
-    db.all(`
-      SELECT f.id as formation_id, f.nom as formation_nom, f.apprenants, f.debut, f.fin, f.besoins,
-             s.id as salle_id, s.nom as salle_nom, s.capacite, s.equipements
-      FROM formations f
-      LEFT JOIN affectations a ON f.id = a.formation_id
-      LEFT JOIN salles s ON a.salle_id = s.id
-      WHERE a.id IS NULL AND f.debut >= DATE('now')
-      ORDER BY f.debut
-    `, async (err, formations) => {
-      if (err) return reject(err);
-      if (!formations || formations.length === 0) {
-        return resolve([]);
-      }
+ optimiserAffectations: (db) => new Promise((resolve, reject) => {
+  // Récupérer d'abord toutes les formations à venir
+  db.all(`
+    SELECT f.id as formation_id, f.nom as formation_nom, f.apprenants, f.debut, f.fin, f.besoins
+    FROM formations f
+    WHERE f.debut >= date('now')
+    ORDER BY f.debut
+  `, async (err, formations) => {
+    if (err) return reject(err);
+    if (!formations || formations.length === 0) {
+      return resolve([]);
+    }
 
-      const suggestions = [];
-      for (const f of formations) {
-        try {
-          const sallesDisponibles = await new Promise((resolveSalles, rejectSalles) => {
-            db.all(`
-              SELECT * FROM salles 
-              WHERE capacite >= ? AND (equipements LIKE ? OR equipements IS NULL)
-              AND id NOT IN (SELECT salle_id FROM affectations WHERE date = ?)
-            `, [f.apprenants, `%${f.besoins}%`, f.debut], (err, salles) => {
-              if (err) rejectSalles(err);
-              else resolveSalles(salles || []);
+    const suggestions = [];
+    
+    for (const f of formations) {
+      try {
+        // Vérifier si la formation a déjà une affectation
+        const existingAffectation = await new Promise((resolveCheck, rejectCheck) => {
+          db.get('SELECT id FROM affectations WHERE formation_id = ? AND date = ?', 
+            [f.formation_id, f.debut], (err, row) => {
+              if (err) return rejectCheck(err);
+              resolveCheck(row);
             });
+        });
+        
+        // Si la formation a déjà une affectation, passer à la suivante
+        if (existingAffectation) continue;
+        
+        // Trouver les salles disponibles pour cette formation
+        const sallesDisponibles = await new Promise((resolveSalles, rejectSalles) => {
+          db.all(`
+            SELECT * FROM salles 
+            WHERE capacite >= ? 
+            AND id NOT IN (
+              SELECT salle_id FROM affectations WHERE date = ?
+            )
+            ORDER BY capacite
+          `, [f.apprenants, f.debut], (err, salles) => {
+            if (err) rejectSalles(err);
+            else resolveSalles(salles || []);
           });
+        });
 
-          if (sallesDisponibles.length > 0) {
-            const salle = sallesDisponibles.reduce((best, current) => 
-              current.capacite - f.apprenants < best.capacite - f.apprenants ? current : best
-            );
-            suggestions.push({
-              formation_id: f.formation_id,
-              formation_nom: f.formation_nom,
-              apprenants: f.apprenants,
-              date: f.debut,
-              salle_id: salle.id,
-              salle_nom: salle.nom,
-              capacite: salle.capacite,
-              optimisation: Math.round((f.apprenants / salle.capacite) * 100)
-            });
-          }
-        } catch (error) {
-          reject(error);
+        // Filtrer les salles par besoins d'équipement si nécessaire
+        let sallesFiltrees = sallesDisponibles;
+        if (f.besoins && f.besoins.trim() !== '') {
+          sallesFiltrees = sallesDisponibles.filter(s => 
+            !s.equipements || s.equipements.includes(f.besoins)
+          );
         }
+
+        if (sallesFiltrees.length > 0) {
+          // Trouver la salle la plus adaptée (capacité la plus proche)
+          const salle = sallesFiltrees.reduce((best, current) => 
+            (current.capacite - f.apprenants < best.capacite - f.apprenants && 
+             current.capacite >= f.apprenants) ? current : best, 
+            sallesFiltrees[0]
+          );
+          
+          suggestions.push({
+            formation_id: f.formation_id,
+            formation_nom: f.formation_nom,
+            apprenants: f.apprenants,
+            date: f.debut,
+            salle_id: salle.id,
+            salle_nom: salle.nom,
+            capacite: salle.capacite,
+            optimisation: Math.round((f.apprenants / salle.capacite) * 100)
+          });
+        }
+      } catch (error) {
+        console.error("Erreur lors de l'optimisation:", error);
+        // Continue avec les autres formations même si une erreur se produit
       }
-      resolve(suggestions);
-    });
-  }),
-};
+    }
+    resolve(suggestions);
+  });
+}),
