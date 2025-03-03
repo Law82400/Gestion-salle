@@ -178,4 +178,55 @@ module.exports = {
       }
     );
   }),
+  optimiserAffectations: (db) => new Promise((resolve, reject) => {
+    db.all(`
+      SELECT f.id as formation_id, f.nom as formation_nom, f.apprenants, f.debut, f.fin, f.besoins,
+             s.id as salle_id, s.nom as salle_nom, s.capacite, s.equipements
+      FROM formations f
+      LEFT JOIN affectations a ON f.id = a.formation_id
+      LEFT JOIN salles s ON a.salle_id = s.id
+      WHERE a.id IS NULL AND f.debut >= DATE('now')
+      ORDER BY f.debut
+    `, async (err, formations) => {
+      if (err) return reject(err);
+      if (!formations || formations.length === 0) {
+        return resolve([]); // Pas de formations à optimiser
+      }
+
+      const suggestions = [];
+      for (const f of formations) {
+        try {
+          const sallesDisponibles = await new Promise((resolveSalles, rejectSalles) => {
+            db.all(`
+              SELECT * FROM salles 
+              WHERE capacite >= ? AND (equipements LIKE ? OR equipements IS NULL)
+              AND id NOT IN (SELECT salle_id FROM affectations WHERE date = ?)
+            `, [f.apprenants, `%${f.besoins}%`, f.debut], (err, salles) => {
+              if (err) rejectSalles(err);
+              else resolveSalles(salles);
+            });
+          });
+
+          if (sallesDisponibles && sallesDisponibles.length > 0) {
+            const salle = sallesDisponibles.reduce((best, current) => 
+              current.capacite - f.apprenants < best.capacite - f.apprenants ? current : best
+            );
+            suggestions.push({
+              formation_id: f.formation_id,
+              formation_nom: f.formation_nom,
+              apprenants: f.apprenants,
+              date: f.debut,
+              salle_id: salle.id,
+              salle_nom: salle.nom,
+              capacite: salle.capacite,
+              optimisation: Math.round((f.apprenants / salle.capacite) * 100)
+            });
+          }
+        } catch (error) {
+          reject(error);
+        }
+      }
+      resolve(suggestions);
+    });
+  }),
 };
