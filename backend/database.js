@@ -68,7 +68,7 @@ module.exports = {
   getSalles: (db) => new Promise((resolve, reject) => {
     db.all('SELECT * FROM salles ORDER BY nom', (err, rows) => {
       if (err) reject(err);
-      else resolve(rows);
+      else resolve(rows || []);
     });
   }),
   addSalle: (db, salle) => new Promise((resolve, reject) => {
@@ -104,7 +104,7 @@ module.exports = {
   getFormations: (db) => new Promise((resolve, reject) => {
     db.all('SELECT * FROM formations ORDER BY debut', (err, rows) => {
       if (err) reject(err);
-      else resolve(rows);
+      else resolve(rows || []);
     });
   }),
   addFormation: (db, formation) => new Promise((resolve, reject) => {
@@ -158,7 +158,7 @@ module.exports = {
     `;
     db.all(query, (err, rows) => {
       if (err) reject(err);
-      else resolve(rows);
+      else resolve(rows || []);
     });
   }),
   addAffectation: (db, affectation) => new Promise((resolve, reject) => {
@@ -190,7 +190,7 @@ module.exports = {
     `, async (err, formations) => {
       if (err) return reject(err);
       if (!formations || formations.length === 0) {
-        return resolve([]); // Pas de formations à optimiser
+        return resolve([]);
       }
 
       const suggestions = [];
