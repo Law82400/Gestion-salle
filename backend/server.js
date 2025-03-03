@@ -1,15 +1,3 @@
-// Ajouter en haut du fichier server.js
-const fs = require('fs');
-
-// Ajouter juste avant startServer()
-try {
-  if (fs.existsSync(path.join(__dirname, 'gestion-formation.db'))) {
-    fs.unlinkSync(path.join(__dirname, 'gestion-formation.db'));
-    console.log('Base de données supprimée pour réinitialisation');
-  }
-} catch(err) {
-  console.error('Erreur lors de la tentative de suppression de la BD:', err);
-}
 const express = require('express');
 const { initDatabase, getSalles, addSalle, updateSalle, deleteSalle, getFormations, addFormation, updateFormation, deleteFormation, getAffectations, addAffectation, optimiserAffectations } = require('./database');
 const cors = require('cors');
