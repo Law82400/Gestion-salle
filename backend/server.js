@@ -12,6 +12,7 @@ let db;
 
 async function startServer() {
   try {
+    // Initialisation de la base de données Heroku Postgres
     db = await initDatabase();
     console.log('Base de données initialisée avec succès');
 
