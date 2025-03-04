@@ -29,10 +29,10 @@ function saveCurrentDate() {
 
 async function loadSalles() {
   try {
-    const salles = await fetch('/api/salles').then(res => {
+    const salles = await fetch('/api/salles'.then(res => {
       if (!res.ok) throw new Error('Erreur lors du chargement des salles');
       return res.json();
-    });
+    }));
     const tbody = document.querySelector('#salles-table tbody');
     if (tbody) {
       tbody.innerHTML = salles.length
@@ -61,10 +61,10 @@ async function loadSalles() {
 
 async function loadFormations() {
   try {
-    const formations = await fetch('/api/formations').then(res => {
+    const formations = await fetch('/api/formations'.then(res => {
       if (!res.ok) throw new Error('Erreur lors du chargement des formations');
       return res.json();
-    });
+    }));
     const tbody = document.querySelector('#formations-table tbody');
     if (tbody) {
       tbody.innerHTML = formations.length
@@ -95,10 +95,10 @@ async function loadFormations() {
 
 async function loadAffectations() {
   try {
-    const affectations = await fetch('/api/affectations') .then(res => {
+    const affectations = await fetch('/api/affectations'.then(res => {
       if (!res.ok) throw new Error('Erreur lors du chargement des affectations');
       return res.json();
-    });
+    }));
     console.log('Affectations chargées :', affectations);
   } catch (error) {
     console.error('Erreur lors du chargement des affectations :', error);
@@ -109,18 +109,18 @@ async function loadAffectations() {
 async function loadDashboard() {
   try {
     const [salles, formations, affectations] = await Promise.all([
-      fetch('/api/salles') .then(res => {
+      fetch('/api/salles'.then(res => {
         if (!res.ok) throw new Error('Erreur lors du chargement des salles');
         return res.json();
-      }),
-      fetch('/api/formations') .then(res => {
+      })),
+      fetch('/api/formations'.then(res => {
         if (!res.ok) throw new Error('Erreur lors du chargement des formations');
         return res.json();
-      }),
-      fetch('/api/affectations') .then(res => {
+      })),
+      fetch('/api/affectations'.then(res => {
         if (!res.ok) throw new Error('Erreur lors du chargement des affectations');
         return res.json();
-      }),
+      })),
     ]);
 
     document.getElementById('stats-salles').textContent = salles.length || '0';
@@ -147,7 +147,7 @@ async function loadDashboard() {
     if (optimiserBtn) {
       optimiserBtn.addEventListener('click', async () => {
         try {
-          const suggestions = await fetch('/api/optimisation' .then(res => {
+          const suggestions = await fetch('/api/optimisation'.then(res => {
             if (!res.ok) throw new Error('Erreur lors de l’optimisation');
             return res.json();
           }));
@@ -192,7 +192,7 @@ async function loadDashboard() {
 
 async function loadPlanning() {
   try {
-    const affectations = await fetch('/api/affectations' .then(res => {
+    const affectations = await fetch('/api/affectations'.then(res => {
       if (!res.ok) throw new Error('Erreur lors du chargement du planning');
       return res.json();
     }));
@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!id) return;
           if (e.target.classList.contains('edit-salle')) {
             try {
-              const salles = await fetch('/api/salles' .then(res => res.json()));
+              const salles = await fetch('/api/salles') .then(res => res.json()));
               const salle = salles.find(s => s.id == id);
               if (salle) {
                 document.getElementById('salle-modal-title').textContent = 'Modifier la salle';
@@ -411,7 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!id) return;
           if (e.target.classList.contains('edit-formation')) {
             try {
-              const formations = await fetch('/api/formations' .then(res => res.json()));
+              const formations = await fetch('/api/formations'.then(res => res.json()));
               const formation = formations.find(f => f.id == id);
               if (formation) {
                 document.getElementById('formation-modal-title').textContent = 'Modifier la formation';
