@@ -7,8 +7,10 @@ const initDatabase = () => {
   return new Promise((resolve, reject) => {
     const db = new sqlite3.Database(dbPath, (err) => {
       if (err) return reject(err);
-
+      // Active le mode WAL pour améliorer la concurrence
+      db.run("PRAGMA journal_mode = WAL");
       db.serialize(() => {
+        // Création des tables
         db.run(`CREATE TABLE IF NOT EXISTS salles (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           nom TEXT NOT NULL,
@@ -17,7 +19,7 @@ const initDatabase = () => {
           date_creation DATETIME DEFAULT CURRENT_TIMESTAMP,
           date_modification DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
-        
+        // reste des tables et index
         db.run(`CREATE TABLE IF NOT EXISTS formations (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           nom TEXT NOT NULL,
