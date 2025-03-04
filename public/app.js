@@ -195,7 +195,7 @@ async function loadPlanning() {
     const affectations = await fetch('/api/affectations' .then(res => {
       if (!res.ok) throw new Error('Erreur lors du chargement du planning');
       return res.json();
-    });
+    }));
     const currentMonth = document.getElementById('current-month');
     if (currentMonth) {
       currentMonth.textContent = currentDate.toLocaleString('fr', { month: 'long', year: 'numeric' });
