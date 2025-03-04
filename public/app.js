@@ -513,4 +513,4 @@ document.addEventListener('DOMContentLoaded', () => {
     console.error('Erreur lors de l’initialisation :', error);
     showNotification('Erreur lors de l’initialisation de l’application : ' + error.message, 'error');
   }
-}
+})
