@@ -150,7 +150,7 @@ async function loadDashboard() {
           const suggestions = await fetch('/api/optimisation' .then(res => {
             if (!res.ok) throw new Error('Erreur lors de l’optimisation');
             return res.json();
-          });
+          }));
           const suggestionsTbody = document.querySelector('#optimisation-suggestions tbody');
           if (suggestionsTbody) {
             suggestionsTbody.innerHTML = suggestions.length
