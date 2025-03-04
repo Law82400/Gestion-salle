@@ -1,12 +1,19 @@
 const express = require('express');
-const { initDatabase, getSalles, addSalle, updateSalle, deleteSalle, getFormations, addFormation, updateFormation, deleteFormation, getAffectations, addAffectation, optimiserAffectations } = require('./database');
+const { 
+  initDatabase, 
+  getSalles, addSalle, updateSalle, deleteSalle, 
+  getFormations, addFormation, updateFormation, deleteFormation, 
+  getAffectations, addAffectation, optimiserAffectations 
+} = require('./database');
 const cors = require('cors');
 const path = require('path');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../frontend')));
+
+// On sert les fichiers depuis le dossier "public"
+app.use(express.static(path.join(__dirname, 'public')));
 
 let db;
 
@@ -15,6 +22,7 @@ async function startServer() {
     db = await initDatabase();
     console.log('Base de données initialisée avec succès');
 
+    // API pour les salles
     app.get('/api/salles', async (req, res) => {
       try {
         const salles = await getSalles(db);
@@ -23,7 +31,6 @@ async function startServer() {
         res.status(500).json({ error: error.message });
       }
     });
-
     app.post('/api/salles', async (req, res) => {
       try {
         const salle = await addSalle(db, req.body);
@@ -32,7 +39,6 @@ async function startServer() {
         res.status(400).json({ error: error.message });
       }
     });
-
     app.put('/api/salles/:id', async (req, res) => {
       try {
         const salle = await updateSalle(db, { id: req.params.id, ...req.body });
@@ -41,7 +47,6 @@ async function startServer() {
         res.status(400).json({ error: error.message });
       }
     });
-
     app.delete('/api/salles/:id', async (req, res) => {
       try {
         await deleteSalle(db, req.params.id);
@@ -51,6 +56,7 @@ async function startServer() {
       }
     });
 
+    // API pour les formations
     app.get('/api/formations', async (req, res) => {
       try {
         const formations = await getFormations(db);
@@ -59,7 +65,6 @@ async function startServer() {
         res.status(500).json({ error: error.message });
       }
     });
-
     app.post('/api/formations', async (req, res) => {
       try {
         const formation = await addFormation(db, req.body);
@@ -68,7 +73,6 @@ async function startServer() {
         res.status(400).json({ error: error.message });
       }
     });
-
     app.put('/api/formations/:id', async (req, res) => {
       try {
         const formation = await updateFormation(db, { id: req.params.id, ...req.body });
@@ -77,7 +81,6 @@ async function startServer() {
         res.status(400).json({ error: error.message });
       }
     });
-
     app.delete('/api/formations/:id', async (req, res) => {
       try {
         await deleteFormation(db, req.params.id);
@@ -87,6 +90,7 @@ async function startServer() {
       }
     });
 
+    // API pour les affectations et l'optimisation
     app.get('/api/affectations', async (req, res) => {
       try {
         const affectations = await getAffectations(db);
@@ -95,7 +99,6 @@ async function startServer() {
         res.status(500).json({ error: error.message });
       }
     });
-
     app.post('/api/affectations', async (req, res) => {
       try {
         const affectation = await addAffectation(db, {
@@ -107,7 +110,6 @@ async function startServer() {
         res.status(400).json({ error: error.message });
       }
     });
-
     app.get('/api/optimisation', async (req, res) => {
       try {
         const suggestions = await optimiserAffectations(db);
@@ -117,8 +119,9 @@ async function startServer() {
       }
     });
 
+    // Route catch-all pour renvoyer l'index
     app.get('*', (req, res) => {
-      res.sendFile(path.join(__dirname, '../frontend/index.html'));
+      res.sendFile(path.join(__dirname, 'public', 'index.html'));
     });
 
     const PORT = process.env.PORT || 3000;
