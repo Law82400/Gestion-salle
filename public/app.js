@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!id) return;
           if (e.target.classList.contains('edit-salle')) {
             try {
-              const salles = await fetch('/api/salles' .then(res => res.json());
+              const salles = await fetch('/api/salles' .then(res => res.json()));
               const salle = salles.find(s => s.id == id);
               if (salle) {
                 document.getElementById('salle-modal-title').textContent = 'Modifier la salle';
