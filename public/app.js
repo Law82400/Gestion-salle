@@ -411,7 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!id) return;
           if (e.target.classList.contains('edit-formation')) {
             try {
-              const formations = await fetch('/api/formations' .then(res => res.json());
+              const formations = await fetch('/api/formations' .then(res => res.json()));
               const formation = formations.find(f => f.id == id);
               if (formation) {
                 document.getElementById('formation-modal-title').textContent = 'Modifier la formation';
