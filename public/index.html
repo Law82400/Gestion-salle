@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion des Salles de Formation</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <h1>Gestion des Salles de Formation</h1>
+      <nav aria-label="Navigation principale">
+        <ul>
+          <li><a href="#" class="active" data-page="dashboard"><i class="fas fa-home"></i> Tableau de bord</a></li>
+          <li><a href="#" data-page="salles"><i class="fas fa-door-open"></i> Salles</a></li>
+          <li><a href="#" data-page="formations"><i class="fas fa-chalkboard-teacher"></i> Formations</a></li>
+          <li><a href="#" data-page="planning"><i class="fas fa-calendar-alt"></i> Planning</a></li>
+        </ul>
+      </nav>
+    </header>
+    
+    <main>
+      <div id="notifications" class="notifications" role="alert"></div>
+      <section id="dashboard" class="page" aria-label="Tableau de bord">
+        <div class="dashboard-header">
+          <h2>Tableau de bord</h2>
+          <div class="stats-container">
+            <div class="stat-card"><i class="fas fa-door-open"></i><div class="stat-content"><h3>Salles</h3><p id="stats-salles">Chargement...</p></div></div>
+            <div class="stat-card"><i class="fas fa-chalkboard-teacher"></i><div class="stat-content"><h3>Formations</h3><p id="stats-formations">Chargement...</p></div></div>
+            <div class="stat-card"><i class="fas fa-calendar-check"></i><div class="stat-content"><h3>Affectations</h3><p id="stats-affectations">Chargement...</p></div></div>
+            <div class="stat-card"><i class="fas fa-percentage"></i><div class="stat-content"><h3>Taux Remplissage</h3><p id="stats-remplissage">Chargement...</p></div></div>
+          </div>
+        </div>
+        <div class="dashboard-content">
+          <div class="card">
+            <h3>Formations à venir (7 prochains jours)</h3>
+            <div class="table-container">
+              <table id="dashboard-prochaines-formations">
+                <thead><tr><th>Formation</th><th>Date</th><th>Apprenants</th><th>Salle</th></tr></thead>
+                <tbody><tr><td colspan="4" class="center">Chargement...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Optimisation de salles suggérée</h3>
+            <p><button id="optimiser-btn" class="button primary"><i class="fas fa-magic"></i> Lancer l'optimisation</button></p>
+            <div class="table-container">
+              <table id="optimisation-suggestions">
+                <thead><tr><th>Formation</th><th>Date</th><th>Apprenants</th><th>Salle suggérée</th><th>Capacité</th><th>Remplissage</th><th>Action</th></tr></thead>
+                <tbody><tr><td colspan="7" class="center">Cliquez sur "Lancer l'optimisation"</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <section id="salles" class="page" style="display: none;" aria-label="Gestion des salles">
+        <div class="section-header">
+          <h2>Gestion des Salles</h2>
+          <div class="actions">
+            <button id="add-salle-btn" class="button primary"><i class="fas fa-plus"></i> Ajouter une salle</button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table id="salles-table">
+            <thead><tr><th>Nom</th><th>Capacité</th><th>Équipements</th><th>Actions</th></tr></thead>
+            <tbody><tr><td colspan="4" class="center">Chargement...</td></tr></tbody>
+          </table>
+        </div>
+        <div id="salle-modal" class="modal" role="dialog" aria-labelledby="salle-modal-title">
+          <div class="modal-content">
+            <span class="close" aria-label="Fermer">×</span>
+            <h3 id="salle-modal-title">Ajouter une salle</h3>
+            <form id="salle-form">
+              <input type="hidden" id="salle-id">
+              <div class="form-group">
+                <label for="salle-nom">Nom de la salle</label>
+                <input type="text" id="salle-nom" required aria-required="true">
+              </div>
+              <div class="form-group">
+                <label for="salle-capacite">Capacité</label>
+                <input type="number" id="salle-capacite" min="1" required aria-required="true">
+              </div>
+              <div class="form-group">
+                <label for="salle-equipements">Équipements (séparés par des virgules)</label>
+                <textarea id="salle-equipements" rows="3" placeholder="Ex: vidéoprojecteur, système audio"></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="button cancel close-modal">Annuler</button>
+                <button type="submit" class="button primary">Enregistrer</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+      
+      <section id="formations" class="page" style="display: none;" aria-label="Gestion des formations">
+        <div class="section-header">
+          <h2>Gestion des Formations</h2>
+          <div class="actions">
+            <button id="add-formation-btn" class="button primary"><i class="fas fa-plus"></i> Ajouter une formation</button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table id="formations-table">
+            <thead><tr><th>Nom</th><th>Apprenants</th><th>Date début</th><th>Date fin</th><th>Besoins spécifiques</th><th>Actions</th></tr></thead>
+            <tbody><tr><td colspan="6" class="center">Chargement...</td></tr></tbody>
+          </table>
+        </div>
+        <div id="formation-modal" class="modal" role="dialog" aria-labelledby="formation-modal-title">
+          <div class="modal-content">
+            <span class="close" aria-label="Fermer">×</span>
+            <h3 id="formation-modal-title">Ajouter une formation</h3>
+            <form id="formation-form">
+              <input type="hidden" id="formation-id">
+              <div class="form-group">
+                <label for="formation-nom">Nom de la formation</label>
+                <input type="text" id="formation-nom" required aria-required="true">
+              </div>
+              <div class="form-group">
+                <label for="formation-apprenants">Nombre d'apprenants</label>
+                <input type="number" id="formation-apprenants" min="1" required aria-required="true">
+              </div>
+              <div class="form-group">
+                <label for="formation-debut">Date de début</label>
+                <input type="date" id="formation-debut" required aria-required="true">
+              </div>
+              <div class="form-group">
+                <label for="formation-fin">Date de fin</label>
+                <input type="date" id="formation-fin" required aria-required="true">
+              </div>
+              <div class="form-group">
+                <label for="formation-besoins">Besoins spécifiques</label>
+                <textarea id="formation-besoins" rows="3" placeholder="Ex: vidéoprojecteur, système audio"></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="button cancel close-modal">Annuler</button>
+                <button type="submit" class="button primary">Enregistrer</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+      
+      <section id="planning" class="page" style="display: none;" aria-label="Planning">
+        <div class="section-header">
+          <h2>Planning des Formations</h2>
+          <div class="actions">
+            <button id="prev-month" class="button secondary"><i class="fas fa-chevron-left"></i> Mois précédent</button>
+            <span id="current-month">Chargement...</span>
+            <button id="next-month" class="button secondary">Mois suivant <i class="fas fa-chevron-right"></i></button>
+          </div>
+        </div>
+        <div class="calendar-container">
+          <div class="calendar-header">
+            <div>Lundi</div><div>Mardi</div><div>Mercredi</div><div>Jeudi</div><div>Vendredi</div>
+          </div>
+          <div id="calendar-body" class="calendar-body">
+            <div class="center">Chargement du calendrier...</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
